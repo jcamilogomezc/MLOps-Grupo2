@@ -1,5 +1,10 @@
 # Taller 1: Nivel 0 - Docker + FastAPI
 
+## Integrantes
+* Edgar Cruz Martinez
+* Juan Camilo Gomez Cano
+* Germán Andrés Ospina Quintero
+
 ## Documentación del funcionamiento
 
 En el siguiente video se presenta el funcionamiento de la API para la predicción de las especies. Se hace uso de *Swagger* para la demostración.
