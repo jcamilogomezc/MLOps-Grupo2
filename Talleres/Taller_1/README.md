@@ -1,4 +1,4 @@
-# Description
+# Taller 1: Nivel 0 - Docker + FastAPI
 
 ## Run project locally
 
@@ -13,3 +13,11 @@ uvicorn app.main:app --host 0.0.0.0 --port 80
 ```shell
 docker build -f docker/Dockerfile -t taller_1_image . && docker run --name taller_1_image -p 8000:80 taller_1_container
 ```
+
+## Preparación de los datos y creación de los modelos
+
+## Docker
+
+## FastAPI
+
+## Documentación del funcionamiento
