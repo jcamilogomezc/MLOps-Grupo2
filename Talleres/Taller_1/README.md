@@ -128,7 +128,6 @@ Este código (`main.py`) implementa una API con **FastAPI** para utilizar los mo
   - Nombre del modelo.
   - Lista de predicciones.
   - Cantidad de predicciones realizadas.
----
 
 ### Schemas
 
