@@ -1,5 +1,13 @@
 # Taller 1: Nivel 0 - Docker + FastAPI
 
+## Documentación del funcionamiento
+
+En el siguiente video se presenta el funcionamiento de la API para la predicción de las especies. Se hace uso de *Swagger* para la demostración.
+
+[![Mira el video en YouTube](https://img.youtube.com/vi/uuWJKZ3NUfw/0.jpg)](https://www.youtube.com/watch?v=uuWJKZ3NUfw)
+
+---
+
 ## Preparación de los datos y creación de los modelos
 
 ### Notebook de entrenamiento
@@ -183,13 +191,6 @@ Este código (`models_loader.py`) carga los modelos entrenados y el codificador 
      - Diccionario de modelos (`nombre → objeto modelo`).
      - Objeto codificador de clases.
 ---
-
-## Documentación del funcionamiento
-
-En el siguiente video se presenta el funcionamiento de la API para la predicción de las especies. Se hace uso de *Swagger* para la demostración.
-
-[![Mira el video en YouTube](https://img.youtube.com/vi/uuWJKZ3NUfw/0.jpg)](https://www.youtube.com/watch?v=uuWJKZ3NUfw)
-
 
 ## Ejecutar el proyecto
 
