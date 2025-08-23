@@ -1,0 +1,2 @@
+# Taller 2
+En este proyecto se crea una aplicación que se compone de un notebook de Jupyter inicializado a través de un servidor para que el equipo de desarrollo pueda crear los modelos que serán consumidos por el componente, un API que utiliza Fast API y que permite seleccionar el modelo para realizar las inferencias.
