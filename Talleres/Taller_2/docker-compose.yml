@@ -11,6 +11,6 @@ services:
       - ./models:/app/models
     environment:
       - JUPYTER_ENABLE_LAB=yes
-      - JUPYTER_TOKEN=your_token_here
-      - JUPYTER_PASSWORD=your_password_here
+      - JUPYTER_TOKEN=test_token
+      - JUPYTER_PASSWORD=test_password
     restart: unless-stopped
