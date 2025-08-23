@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  jupyter:
+    build:
+      context: ./jupyter
+      dockerfile: Dockerfile
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./models:/app/models
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - JUPYTER_TOKEN=your_token_here
+      - JUPYTER_PASSWORD=your_password_here
+    restart: unless-stopped
