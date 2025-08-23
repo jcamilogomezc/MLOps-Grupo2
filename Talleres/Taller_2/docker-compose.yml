@@ -7,7 +7,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8888:8888"
-    # working_dir: /home/jovyan/work 
     volumes:
       - ./models:/app/models
     environment:
