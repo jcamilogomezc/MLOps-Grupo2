@@ -1,23 +1,29 @@
+# Archivo de configuración Docker Compose para el proyecto
+# Este archivo define los servicios necesarios para ejecutar la aplicación
+
 services:
+  # Servicio de Jupyter Lab para desarrollo y análisis de datos
   jupyter:
     build:
-      context: ./jupyter
-      dockerfile: Dockerfile
+      context: ./jupyter          # Directorio que contiene el Dockerfile de Jupyter
+      dockerfile: Dockerfile      # Nombre del archivo Dockerfile a usar
     ports:
-      - "8888:8888"
+      - "8888:8888"              # Mapeo de puertos: puerto_host:puerto_contenedor
     volumes:
-      - ./models:/app/models
+      - ./models:/app/models     # Montaje de volumen: directorio_local:directorio_contenedor
     environment:
-      - JUPYTER_ENABLE_LAB=yes
-      - JUPYTER_TOKEN=test_token
-      - JUPYTER_PASSWORD=test_password
-    restart: unless-stopped
+      - JUPYTER_ENABLE_LAB=yes   # Habilita Jupyter Lab en lugar de Jupyter Notebook
+      - JUPYTER_TOKEN=test_token # Token de autenticación para acceder a Jupyter
+      - JUPYTER_PASSWORD=test_password # Contraseña para acceder a Jupyter
+    restart: unless-stopped      # Política de reinicio: reinicia a menos que se detenga manualmente
+  
+  # Servicio de API REST para la aplicación
   api:
     build:
-      context: ./api
-      dockerfile: Dockerfile
+      context: ./api             # Directorio que contiene el Dockerfile de la API
+      dockerfile: Dockerfile     # Nombre del archivo Dockerfile a usar
     ports:
-      - "8989:8989"
+      - "8989:8989"              # Mapeo de puertos: puerto_host:puerto_contenedor
     volumes:
-      - ./models:/app/models
-    restart: unless-stopped
+      - ./models:/app/models     # Montaje de volumen: directorio_local:directorio_contenedor
+    restart: unless-stopped      # Política de reinicio: reinicia a menos que se detenga manualmente
