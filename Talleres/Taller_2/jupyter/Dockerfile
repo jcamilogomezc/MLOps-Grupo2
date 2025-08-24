@@ -6,6 +6,11 @@
 # Esta imagen incluye uv (gestor de paquetes rápido para Python) preinstalado
 FROM astral/uv:python3.12-bookworm-slim
 
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get update && \
+    apt-get -y install build-essential && \
+    rm -rf /var/lib/apt/lists/*
+
 # Establecer el directorio de trabajo principal
 WORKDIR /app
 
@@ -18,7 +23,7 @@ WORKDIR /app/ml_service
 
 # Inicializar un nuevo proyecto Python con uv
 # --no-readme: no crear el archivo README.md por defecto
-RUN uv init --no-readme && rm -f main.py 
+RUN uv init --no-readme && rm -f main.py
 # Eliminar el archivo main.py que se crea por defecto
     
 # Instalar las dependencias especificadas en requirements.txt
