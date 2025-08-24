@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from data_models import PredictRequest, PredictResponse
 import pandas as pd
+import numpy as np
 import joblib
 import json
 import os
@@ -42,11 +43,17 @@ def predict_species(request: PredictRequest) -> PredictResponse:
         # Make predictions
         predictions = model.predict(df)
 
-        # Prepare the response
+        # Aplanar la lista si es necesario. Esto convierte [[...], [...]] en [...]. Catboost lo arroja así
+        if isinstance(predictions, np.ndarray) and predictions.ndim > 1:
+            flat_predictions = [item[0] for item in predictions]
+        else:
+            flat_predictions = predictions.tolist()
+
+        # Preparar respuesta
         response = PredictResponse(
             model=request.model,
-            species=predictions.tolist(),
-            num_predictions=len(predictions)
+            species=flat_predictions,
+            num_predictions=len(flat_predictions)
         )
 
         return response
