@@ -1,4 +1,4 @@
-# Taller 2: MLOps
+# Taller 2: Nivel 1 - Desarrollo en Contenedores
 
 Este proyecto implementa una arquitectura básica de MLOps que permite al equipo de desarrollo:
 

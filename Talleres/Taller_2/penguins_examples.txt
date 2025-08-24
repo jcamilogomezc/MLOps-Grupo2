@@ -1,0 +1,204 @@
+EJEMPLOS SENCILLOS
+
+{
+  "model": "logistic_regression",
+  "penguins": [
+    {
+      "island": "Dream",
+      "bill_length_mm": 50.8,
+      "bill_depth_mm": 18.5,
+      "flipper_length_mm": 204,
+      "body_mass_g": 4575,
+      "sex": "male"
+    }
+  ]
+}
+
+{
+  "model": "random_forest",
+  "penguins": [
+    {
+      "island": "Torgersen",
+      "bill_length_mm": 39.1,
+      "bill_depth_mm": 18.7,
+      "flipper_length_mm": 181,
+      "body_mass_g": 3750,
+      "sex": "male"
+    }
+  ]
+}
+
+{
+  "model": "svc",
+  "penguins": [
+    {
+      "island": "Biscoe",
+      "bill_length_mm": 49.6,
+      "bill_depth_mm": 16.0,
+      "flipper_length_mm": 225,
+      "body_mass_g": 5700,
+      "sex": "male"
+    }
+  ]
+}
+
+EJEMPLOS CON MULTIPLES PINGUINOS
+
+{
+  "model": "random_forest",
+  "penguins": [
+    {
+      "island": "Biscoe",
+      "bill_length_mm": 49.6,
+      "bill_depth_mm": 16.0,
+      "flipper_length_mm": 225,
+      "body_mass_g": 5700,
+      "sex": "male"
+    },
+    {
+      "island": "Dream",
+      "bill_length_mm": 50.8,
+      "bill_depth_mm": 18.5,
+      "flipper_length_mm": 204,
+      "body_mass_g": 4575,
+      "sex": "male"
+    }
+  ]
+}
+
+{
+  "model": "svc",
+  "penguins": [
+    {
+      "island": "Torgersen",
+      "bill_length_mm": 39.1,
+      "bill_depth_mm": 18.7,
+      "flipper_length_mm": 181,
+      "body_mass_g": 3750,
+      "sex": "male"
+    },
+    {
+      "island": "Biscoe",
+      "bill_length_mm": 49.6,
+      "bill_depth_mm": 16.0,
+      "flipper_length_mm": 225,
+      "body_mass_g": 5700,
+      "sex": "male"
+    },
+    {
+      "island": "Dream",
+      "bill_length_mm": 50.8,
+      "bill_depth_mm": 18.5,
+      "flipper_length_mm": 204,
+      "body_mass_g": 4575,
+      "sex": "male"
+    }
+  ]
+}
+
+{
+  "model": "logistic_regression",
+  "penguins": [
+    {
+      "island": "Biscoe",
+      "bill_length_mm": 45.8,
+      "bill_depth_mm": 14.2,
+      "flipper_length_mm": 219,
+      "body_mass_g": 5600,
+      "sex": "female"
+    },
+    {
+      "island": "Dream",
+      "bill_length_mm": 46.5,
+      "bill_depth_mm": 17.9,
+      "flipper_length_mm": 192,
+      "body_mass_g": 3500,
+      "sex": "female"
+    },
+    {
+      "island": "Torgersen",
+      "bill_length_mm": 40.0,
+      "bill_depth_mm": 17.9,
+      "flipper_length_mm": 186,
+      "body_mass_g": 3800,
+      "sex": "male"
+    }
+  ]
+}
+
+EJEMPLOS CON VALORES NULOS
+
+{
+  "model": "random_forest",
+  "penguins": [
+    {
+      "island": "Biscoe",
+      "bill_length_mm": 49.6,
+      "bill_depth_mm": null,
+      "flipper_length_mm": 225,
+      "body_mass_g": 5700,
+      "sex": "male"
+    },
+    {
+      "island": "Dream",
+      "bill_length_mm": 50.8,
+      "bill_depth_mm": 18.5,
+      "flipper_length_mm": 204,
+      "body_mass_g": null,
+      "sex": "male"
+    }
+  ]
+}
+
+{
+  "model": "svc",
+  "penguins": [
+    {
+      "island": "Torgersen",
+      "bill_length_mm": 39.1,
+      "bill_depth_mm": 18.7,
+      "flipper_length_mm": null,
+      "body_mass_g": 3750,
+      "sex": "male"
+    },
+    {
+      "island": "Biscoe",
+      "bill_length_mm": 49.6,
+      "bill_depth_mm": 16.0,
+      "flipper_length_mm": 225,
+      "body_mass_g": 5700,
+      "sex": null
+    }
+  ]
+}
+
+
+{
+  "model": "logistic_regression",
+  "penguins": [
+    {
+      "island": "Biscoe",
+      "bill_length_mm": 45.8,
+      "bill_depth_mm": 14.2,
+      "flipper_length_mm": null,
+      "body_mass_g": null,
+      "sex": "female"
+    },
+    {
+      "island": "Dream",
+      "bill_length_mm": null,
+      "bill_depth_mm": 17.9,
+      "flipper_length_mm": 192,
+      "body_mass_g": 3500,
+      "sex": "female"
+    },
+    {
+      "island": "Torgersen",
+      "bill_length_mm": 40.0,
+      "bill_depth_mm": null,
+      "flipper_length_mm": 186,
+      "body_mass_g": 3800,
+      "sex": "male"
+    }
+  ]
+}

@@ -1,7 +1,10 @@
-uvicorn
-jupyter
-ipykernel
-numpy
-pandas
-matplotlib
-scikit-learn
+jupyter==1.0.0
+ipykernel==6.29.2
+numpy==1.26.4
+pandas==2.2.2
+matplotlib==3.8.3
+scikit-learn==1.7.1
+joblib==1.5.1
+palmerpenguins==0.1.4
+ydata-profiling==4.7.0
+catboost==1.2.6
