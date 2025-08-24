@@ -1,5 +1,19 @@
 # Taller 2: Nivel 1 - Desarrollo en Contenedores
 
+## Integrantes
+* Edgar Cruz Martinez
+* Juan Camilo Gomez Cano
+* Germán Andrés Ospina Quintero
+
+## Documentación del funcionamiento
+
+En el siguiente video se presenta el funcionamiento del proyecto:
+
+[![Mira el video en YouTube](https://img.youtube.com/vi/uuWJKZ3NUfw/0.jpg)](https://www.youtube.com/watch?v=uuWJKZ3NUfw)
+
+---
+
+
 Este proyecto implementa una arquitectura básica de MLOps que permite al equipo de desarrollo:
 
 - Crear y entrenar modelos de machine learning en un entorno interactivo de Jupyter Notebook, desplegado mediante Docker y gestionado con el gestor de paquetes `uv`.
