@@ -13,7 +13,6 @@ from data_models import PredictRequest, PredictResponse
 import pandas as pd
 import numpy as np
 import joblib
-import json
 import os
 from typing import Dict, List, Union
 
