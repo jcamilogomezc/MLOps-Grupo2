@@ -9,7 +9,7 @@
 
 En el siguiente video se presenta el funcionamiento del proyecto:
 
-[![Mira el video en YouTube](https://img.youtube.com/vi/uuWJKZ3NUfw/0.jpg)](https://www.youtube.com/watch?v=uuWJKZ3NUfw)
+[![Mira el video en YouTube](https://img.youtube.com/vi/iqvIPvcs0GY/0.jpg)](https://www.youtube.com/watch?v=iqvIPvcs0GY)
 
 ---
 
