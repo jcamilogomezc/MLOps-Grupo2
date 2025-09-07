@@ -1,0 +1,7 @@
+model,accuracy,f1_macro,path
+logistic_regression,1.0,1.0,/opt/airflow/dags/models/logistic_regression.joblib
+random_forest,1.0,1.0,/opt/airflow/dags/models/random_forest.joblib
+svc,1.0,1.0,/opt/airflow/dags/models/svc.joblib
+knn,1.0,1.0,/opt/airflow/dags/models/knn.joblib
+catboost,1.0,1.0,/opt/airflow/dags/models/catboost.joblib
+adaboost,0.9710144927536232,0.9650793650793651,/opt/airflow/dags/models/adaboost.joblib

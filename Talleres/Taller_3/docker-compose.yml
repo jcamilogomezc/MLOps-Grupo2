@@ -333,6 +333,19 @@ services:
       start_period: 20s
     restart: always
 
+  # Servicio de API REST para la aplicación
+  api:
+    build:
+      context: ./api             # Directorio que contiene el Dockerfile de la API
+      dockerfile: Dockerfile     # Nombre del archivo Dockerfile a usar
+    ports:
+      - "8989:8989"              # Mapeo de puertos: puerto_host:puerto_contenedor
+    volumes:
+      - ./dags:/opt/airflow/dags # Monta el directorio de dags para acceder a los modelos
+    depends_on:
+      - airflow-scheduler
+    restart: unless-stopped      # Política de reinicio: reinicia a menos que se detenga manually
+
 volumes:
   postgres-db-volume:
   mysqldata-db-volume: #volumen de la base de datos

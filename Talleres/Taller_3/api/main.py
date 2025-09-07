@@ -5,7 +5,7 @@ Este módulo proporciona una aplicación FastAPI para predecir especies de ping�
 utilizando modelos de machine learning entrenados. La API soporta múltiples modelos 
 y puede manejar predicciones en lote para múltiples pingüinos.
 
-Versión: 2.0
+Versión: 3.0
 """
 
 from fastapi import FastAPI, HTTPException
@@ -16,10 +16,13 @@ import joblib
 import os
 from typing import Dict, List, Union
 
+# Ruta absoluta al directorio de modelos dentro del contenedor
+MODELS_DIR = "/opt/airflow/dags/models"
+
 # Inicializar aplicación FastAPI con metadatos
 app = FastAPI(
     title="API de Predicción de Especies de Pingüinos", 
-    version="2.0", 
+    version="3.0", 
     description="API para predecir especies de pingüinos usando modelos entrenados."
 )
 
@@ -28,20 +31,22 @@ def read_models_paths() -> Dict[str, str]:
     """
     Lee los archivos de modelos disponibles del directorio de modelos.
     
-    Escanea el directorio '../models' en busca de archivos que terminen con 
+    Escanea el directorio de modelos en busca de archivos que terminen con 
     la extensión '.joblib' y crea un mapeo de nombres de modelos a sus rutas de archivo.
     
     Returns:
         Dict[str, str]: Diccionario donde las claves son nombres de modelos (sin extensión) 
-                       y los valores son rutas de archivo relativas.
+                       y los valores son rutas de archivo absolutas.
     
     Ejemplo:
         >>> read_models_paths()
-        {'random_forest': '../models/random_forest.joblib', 
-         'gradient_boosting': '../models/gradient_boosting.joblib'}
+        {'random_forest': '/opt/airflow/dags/models/random_forest.joblib', 
+         'gradient_boosting': '/opt/airflow/dags/models/gradient_boosting.joblib'}
     """
-    return {file.split(".")[0]: f"../models/{file}" 
-            for file in os.listdir("../models") 
+    if not os.path.exists(MODELS_DIR):
+        return {}
+    return {file.split(".")[0]: os.path.join(MODELS_DIR, file)
+            for file in os.listdir(MODELS_DIR) 
             if file.endswith(".joblib")}
 
 
@@ -72,7 +77,7 @@ def get_status() -> Dict[str, Union[str, List[str]]]:
     model_paths = read_models_paths()
     return {
         "status": "running", 
-        "version": "2.0", 
+        "version": "3.0", 
         "Available models": list(model_paths.keys())
     }
 
