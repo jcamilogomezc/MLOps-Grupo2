@@ -51,7 +51,8 @@ x-airflow-common:
   # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
   # image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.6.0}
-  build: ${AIRFLOW_PROJ_DIR}
+  build: .
+
   #image: airflow-mlops:py37-uv   # etiqueta local para reconocer tu imagen
   environment:
     &airflow-common-env
@@ -135,8 +136,6 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
-    volumes:
-      - models:/app/models
 
   airflow-scheduler:
     <<: *airflow-common
@@ -152,8 +151,6 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
-    volumes:
-      - models:/app/models
 
   airflow-worker:
     <<: *airflow-common
@@ -258,6 +255,17 @@ services:
         mkdir -p /sources/logs /sources/dags /sources/plugins
         chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
         exec /entrypoint airflow version
+
+           # Add MySQL connections after Airflow is initialized
+        echo "Adding MySQL connections..."
+        gosu airflow airflow connections add mymysql \
+          --conn-type mysql \
+          --conn-host mysqldata \
+          --conn-login appuser \
+          --conn-password apppass \
+          --conn-schema mlops_db \
+          --conn-port 3306 || echo "Connection mymysql already exists or failed to create"
+
     # yamllint enable rule:line-length
     environment:
       <<: *airflow-common-env
@@ -327,5 +335,4 @@ services:
 
 volumes:
   postgres-db-volume:
-  mysqldata-db-volume: #volumen de la base de datos 
-  models:
+  mysqldata-db-volume: #volumen de la base de datos

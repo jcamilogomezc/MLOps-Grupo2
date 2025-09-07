@@ -1,0 +1,67 @@
+[2025-09-07T11:31:29.620+0000] {manager.py:487} INFO - Processing files using up to 2 processes at a time 
+[2025-09-07T11:31:29.621+0000] {manager.py:488} INFO - Process each file at most once every 30 seconds
+[2025-09-07T11:31:29.622+0000] {manager.py:490} INFO - Checking for new files in /opt/airflow/dags every 300 seconds
+[2025-09-07T11:31:29.622+0000] {manager.py:758} INFO - Searching for files in /opt/airflow/dags
+[2025-09-07T11:31:29.633+0000] {manager.py:761} INFO - There are 1 files in /opt/airflow/dags
+[2025-09-07T11:31:30.349+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                  PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+---------------------------------------  -----  ---------  --------  ----------  --------------  ----------
+/opt/airflow/dags/penguins_pre_train.py     52  0.13s             0           0
+================================================================================
+[2025-09-07T11:32:00.489+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                PID    Runtime      # DAGs    # Errors  Last Runtime    Last Run
+---------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_pre_train.py                           1           0  0.28s           2025-09-07T11:31:30
+================================================================================
+[2025-09-07T11:32:11.936+0000] {manager.py:470} INFO - Exiting gracefully upon receiving signal 15
+[2025-09-07T11:34:25.065+0000] {manager.py:487} INFO - Processing files using up to 2 processes at a time 
+[2025-09-07T11:34:25.071+0000] {manager.py:488} INFO - Process each file at most once every 30 seconds
+[2025-09-07T11:34:25.071+0000] {manager.py:490} INFO - Checking for new files in /opt/airflow/dags every 300 seconds
+[2025-09-07T11:34:25.072+0000] {manager.py:758} INFO - Searching for files in /opt/airflow/dags
+[2025-09-07T11:34:25.073+0000] {manager.py:761} INFO - There are 1 files in /opt/airflow/dags
+[2025-09-07T11:34:25.860+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                  PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+---------------------------------------  -----  ---------  --------  ----------  --------------  ----------
+/opt/airflow/dags/penguins_pre_train.py     51  0.08s             0           0
+================================================================================
+[2025-09-07T11:34:56.013+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                PID    Runtime      # DAGs    # Errors  Last Runtime    Last Run
+---------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_pre_train.py                           1           0  0.32s           2025-09-07T11:34:26
+================================================================================
+[2025-09-07T11:35:26.405+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                  PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+---------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_pre_train.py     66  0.00s             1           0  0.13s           2025-09-07T11:34:56
+================================================================================
+[2025-09-07T11:35:56.676+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                  PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+---------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_pre_train.py     74  0.00s             1           0  0.14s           2025-09-07T11:35:26
+================================================================================
+[2025-09-07T11:36:26.879+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                  PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+---------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_pre_train.py     82  0.00s             1           0  0.14s           2025-09-07T11:35:56
+================================================================================
