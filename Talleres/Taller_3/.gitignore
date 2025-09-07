@@ -1,0 +1,229 @@
+# ================================
+# Airflow Project .gitignore
+# ================================
+
+# ---- Airflow Runtime Files ----
+# Logs directory
+airflow/logs/
+logs/
+**/logs/
+plugins/
+**/plugins/
+
+# Airflow database (if using SQLite locally)
+airflow.db
+airflow.cfg
+webserver_config.py
+unittests.cfg
+
+# Airflow PID files
+airflow-webserver.pid
+airflow-scheduler.pid
+
+# ---- Docker & Containers ----
+# Docker Compose override files
+docker-compose.override.yml
+docker-compose.*.yml
+!docker-compose.yml
+
+# Docker build cache
+.dockerignore
+
+# ---- Python ----
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+airflow_venv/
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# ---- Data & Temporary Files ----
+# Data directories (be careful with these)
+data/
+temp/
+tmp/
+*.tmp
+*.temp
+
+# CSV, JSON, Excel files (uncomment if you don't want to track data files)
+# *.csv
+# *.json
+# *.xlsx
+# *.xls
+
+# ---- Operating System ----
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# ---- IDE & Editors ----
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# ---- Database ----
+# SQLite databases
+*.sqlite
+*.sqlite3
+*.db
+
+# Database dumps
+*.sql
+*.dump
+
+# ---- Airflow Specific ----
+# Airflow configuration (if contains sensitive data)
+# airflow.cfg
+
+# Compiled DAGs
+*.pyc
+
+# Airflow plugins (if you want to ignore some)
+# airflow/plugins/
+
+# Custom operators/hooks that are work in progress
+# airflow/dags/draft/
+# airflow/dags/experimental/
+
+# ---- Build Logs ----
+build.log
+airflow-build.log
+*.build.log
+
+# ---- Backup Files ----
+*.bak
+*.backup
+*.old
+
+# ---- Node.js (if using for frontend customizations) ----
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ---- Documentation ----
+# Generated documentation
+docs/_build/
+docs/build/
+
+# ---- Terraform (if using for infrastructure) ----
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# ---- Kubernetes (if using for deployment) ----
+*.kubeconfig
+
+# ---- Custom Directories ----
+# Add your custom directories here
+# config/local/
+# scripts/local/
+# notebooks/draft/
