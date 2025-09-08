@@ -239,7 +239,7 @@ def train_models_task():
 # DAG
 # =========================
 with DAG(
-    dag_id="penguins_mysql_ml_train_4models",
+    dag_id="penguins_mysql_ml_train_models",
     start_date=datetime(2024,1,1),
     schedule_interval=None,
     catchup=False,
