@@ -27,10 +27,10 @@ RUN uv add -r requirements.txt
 RUN ls /app/web_service/
 
 # Exponer el puerto 8989 para que la aplicación sea accesible desde fuera del contenedor
-EXPOSE 8989
+EXPOSE 8013
 
 # Comando por defecto para ejecutar la aplicación
 # uv run ejecuta uvicorn (servidor ASGI) con la aplicación main:app
 # --host 0.0.0.0 permite conexiones desde cualquier IP
 # --port 8989 especifica el puerto donde se ejecutará la aplicación
-CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8989"]
+CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8013"]
