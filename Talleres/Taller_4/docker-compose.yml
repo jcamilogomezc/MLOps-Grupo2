@@ -1,0 +1,107 @@
+services:
+  mlflow:
+    build:
+      context: mlflow
+      dockerfile: Dockerfile
+    container_name: mlflow_container
+    depends_on:
+      - mlflow_metadata_db
+    ports:
+      - '5001:5000'
+    networks:
+      - frontend
+      - backend
+    environment:
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=supersecret
+      - MLFLOW_S3_IGNORE_TLS=true
+      - MLFLOW_BUCKET_NAME=mlflow
+    command: server --backend-store-uri postgresql://admin:12345689@mlflow_metadata_db:5432/mlflow_meta --host 0.0.0.0 --serve-artifacts --artifacts-destination s3://mlflow
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: always
+
+  mlflow_metadata_db:
+    image: postgres:16
+    container_name: mlflow_metadata_db_container
+    networks:
+      - backend
+    environment:
+      POSTGRES_DB: mlflow_meta
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 12345689
+    restart: always
+
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: minio_container
+    # volumes:
+    #   - ./minio:/data
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    networks:
+      - frontend
+      - backend
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=supersecret
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: always
+
+  create_buckets:
+    image: minio/mc
+    container_name: mlflow_create_buckets_container
+    depends_on:
+      - minio
+    networks:
+      - backend
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      /usr/bin/mc alias set myminio http://minio:9000 admin supersecret;
+      /usr/bin/mc mb -p myminio/mlflow;
+      exit 0;"
+
+  jupyter_lab:
+    build:
+      context: ./jupyter
+      dockerfile: Dockerfile
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./jupyter/notebooks:/app/notebooks
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - JUPYTER_TOKEN=test_token
+      - JUPYTER_PASSWORD=test_password
+    networks:
+      - backend
+    restart: always
+
+  postgresql:
+    image: postgres:16
+    container_name: main_db_container
+    environment:
+      POSTGRES_DB: main_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 12345689
+    networks:
+      - backend
+    restart: always
+
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
