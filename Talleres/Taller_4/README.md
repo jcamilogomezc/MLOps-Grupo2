@@ -15,6 +15,36 @@ Este repo levanta un entorno local estilo “nube” para todo el ciclo de vida 
 
 ---
 
+## Estructura del proyecto (vista rápida)
+```
+Taller_4/
+├─ docker-compose.yml
+├─ api/
+├─ jupyter/
+├─ mlflow/
+└─ ...
+```
+
+---
+
+## Arquitectura
+```mermaid
+flowchart LR
+    subgraph Usuario
+        A[Jupyter Notebook] -->|Entrena/Loguea| B[MLflow]
+        C[curl / Cliente API] -->|Predicción| E[FastAPI]
+    end
+
+    subgraph Infraestructura
+        B[MLflow] -->|Metadatos| D[(Postgres Meta)]
+        B -->|Artefactos| F[(MinIO - S3)]
+        E[FastAPI] -->|Carga modelo| B
+        J[JupyterLab] -->|Experimentación| B
+    end
+```
+
+---
+
 ## Componentes
 
 | Servicio           | Host:Puerto → Contenedor                   | Rol                                  |
@@ -171,35 +201,5 @@ Si un contenedor queda `unhealthy`, simplifica el healthcheck o aumenta `interva
    - Fija `JUPYTER_TOKEN` en compose o corre `jupyter server list` dentro del contenedor.
 5. **Probabilidades vacías**  
    - Algunos clasificadores no soportan `predict_proba`. Ajusta el pipeline/modelo o la API para manejarlo.
-
----
-
-## Arquitectura
-```mermaid
-flowchart LR
-    subgraph Usuario
-        A[Jupyter Notebook] -->|Entrena/Loguea| B[MLflow]
-        C[curl / Cliente API] -->|Predicción| E[FastAPI]
-    end
-
-    subgraph Infraestructura
-        B[MLflow] -->|Metadatos| D[(Postgres Meta)]
-        B -->|Artefactos| F[(MinIO - S3)]
-        E[FastAPI] -->|Carga modelo| B
-        J[JupyterLab] -->|Experimentación| B
-    end
-```
-
----
-
-## Estructura del proyecto (vista rápida)
-```
-Taller_4/
-├─ docker-compose.yml
-├─ api/
-├─ jupyter/
-├─ mlflow/
-└─ ...
-```
 
 ---
