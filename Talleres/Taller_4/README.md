@@ -11,13 +11,10 @@ En el siguiente video se presenta el funcionamiento del proyecto:
 
 [![Mira el video en YouTube](https://img.youtube.com/vi/XRCuq-75cLA/0.jpg)](https://www.youtube.com/watch?v=XRCuq-75cLA)
 
-⸻
-
 
 Este repo levanta un entorno local estilo “nube” para todo el ciclo de vida de ML:
 **experimentación → tracking/artefactos → registro de modelos → inferencia en API**.
 
----
 
 ## 🧱 Componentes
 
@@ -32,15 +29,11 @@ Este repo levanta un entorno local estilo “nube” para todo el ciclo de vida 
 
 > Las URLs de ejemplo asumen ejecución en **localhost**. Si vas por VPN o IP remota, reemplaza `localhost` por la IP correspondiente.
 
----
-
 ## ✅ Prerrequisitos
 
 - Docker + Docker Compose
 - (Opcional) `make` para usar los atajos del **Makefile**
 - (Opcional) `curl` o Postman para probar la API
-
----
 
 ## 🚀 Quick start
 
@@ -48,29 +41,32 @@ Este repo levanta un entorno local estilo “nube” para todo el ciclo de vida 
 ```bash
 git clone https://github.com/jcamilogomezc/MLOps-Grupo2.git
 cd MLOps-Grupo2/Talleres/Taller_4
+```
 
-2) Arrancar todo (con build)
-
+### 2) Arrancar todo (con build)
+```bash
 docker compose up -d --build
+```
 
 o con make:
-
+```bash
 make up
+```
 
 Verifica:
-
+```bash
 docker ps
+```
 
-3) Abrir servicios
-	•	MLflow UI: http://localhost:8080
-	•	MinIO UI: http://localhost:8002
-	•	JupyterLab: http://localhost:8003
-	•	token: configurado en docker-compose.yml (o corre jupyter server list dentro del contenedor)
-	•	API (docs): http://localhost:8013/docs
+### 3) Abrir servicios
 
-⸻
+* MLflow UI: http://localhost:8080
+* UI: http://localhost:8002
+* JupyterLab: http://localhost:8003
+	* token: configurado en docker-compose.yml (o corre jupyter server list dentro del contenedor)
+* API (docs): http://localhost:8013/docs
 
-🧪 Entrenamiento y registro en MLflow
+## 🧪 Entrenamiento y registro en MLflow
 	1.	Entra a JupyterLab → abre jupyter/notebooks/Pinguinos.ipynb.
 	2.	Ejecuta las celdas. El notebook:
 	•	Lee datos (y puede escribir a BD si lo ajustas).
@@ -81,22 +77,26 @@ docker ps
 
 Importante: La API solo carga el modelo si hay una versión en Production (o si defines una versión explícita por variable de entorno).
 
-⸻
 
-🌐 Probar la API de inferencia
+## 🌐 Probar la API de inferencia
 
 Si ya marcaste un modelo en Production, reinicia la API:
-
+```bash
 docker compose restart api_inference
-# o
+```
+
+o
+```bash
 make restart-api
+```
 
 Healthcheck
-
+```bash
 curl http://localhost:8013/health
+```
 
 Predicción
-
+```bash
 curl -X POST http://localhost:8013/predict \
   -H "Content-Type: application/json" \
   -d '{
@@ -107,9 +107,10 @@ curl -X POST http://localhost:8013/predict \
     "flipper_length_mm": 181,
     "body_mass_g": 3750
   }'
+```
 
 Respuesta esperada (ejemplo):
-
+```bash
 {
   "species": "Adelie",
   "probabilities": {
@@ -118,50 +119,45 @@ Respuesta esperada (ejemplo):
     "Gentoo": 0.03
   }
 }
+```
 
 Si te devuelve "probabilities": {}, tu modelo no expone predict_proba. Puedes ajustar la API para mapear manualmente o registrar un wrapper pyfunc.
 
-⸻
 
-⚙️ Variables de entorno clave
+## ⚙️ Variables de entorno clave
 
 La API lee estas variables (ver docker-compose.yml):
-	•	MLFLOW_TRACKING_URI → http://mlflow:5000
-	•	REGISTERED_MODEL_NAME → PenguinsClassifier
-	•	MODEL_STAGE_OR_VERSION → Production  (o un número de versión, p. ej. 1)
-	•	MLFLOW_S3_ENDPOINT_URL → http://minio:9000
-	•	AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY → credenciales de MinIO
+* MLFLOW_TRACKING_URI → http://mlflow:5000
+* REGISTERED_MODEL_NAME → PenguinsClassifier
+* MODEL_STAGE_OR_VERSION → Production  (o un número de versión, p. ej. 1)
+* MLFLOW_S3_ENDPOINT_URL → http://minio:9000
+* AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY → credenciales de MinIO
 
 Puedes centralizar en .env (ver ejemplo más abajo).
 
-⸻
-
-🧭 Salud de servicios (healthchecks)
+## 🧭 Salud de servicios (healthchecks)
 	•	MLflow: simplificado a un GET http://localhost:5000 dentro del contenedor.
 	•	MinIO: health endpoint http://localhost:9000/minio/health/live.
 
 Si un contenedor queda unhealthy, simplifica el healthcheck o aumenta interval/timeout/retries.
 
-⸻
+## 🧱 Barreras (lo que ya nos pasó y cómo lo arreglamos)
+1. Puertos bloqueados / firewall
+	* Escaneamos con: nc -zv <IP> 8000-8100
+	* Puertos que usamos y normalmente están bien: 8080, 8001, 8002, 8003, 8013
+2.	Builds fallando por contexto
+	* Error clásico: COPY requirements.txt not found
+	* Solución: cada servicio tiene su propia carpeta y el build.context apunta allí.
+3.	API no encuentra modelo
+	* Error: No versions of model 'PenguinsClassifier' in stage 'Production' found
+	* Solución: registra el modelo desde MLflow UI y muévelo a Production. Luego restart de la API.
+4.	Token Jupyter
+	* Fija JUPYTER_TOKEN en compose o corre jupyter server list dentro del contenedor.
+5.	Probabilidades vacías
+	* Algunos clasificadores no soportan predict_proba. Ajusta el pipeline/modelo o la API para manejarlo.
 
-🧱 Barreras (lo que ya nos pasó y cómo lo arreglamos)
-	1.	Puertos bloqueados / firewall
-	•	Escaneamos con: nc -zv <IP> 8000-8100
-	•	Puertos que usamos y normalmente están bien: 8080, 8001, 8002, 8003, 8013
-	2.	Builds fallando por contexto
-	•	Error clásico: COPY requirements.txt not found
-	•	Solución: cada servicio tiene su propia carpeta y el build.context apunta allí.
-	3.	API no encuentra modelo
-	•	Error: No versions of model 'PenguinsClassifier' in stage 'Production' found
-	•	Solución: registra el modelo desde MLflow UI y muévelo a Production. Luego restart de la API.
-	4.	Token Jupyter
-	•	Fija JUPYTER_TOKEN en compose o corre jupyter server list dentro del contenedor.
-	5.	Probabilidades vacías
-	•	Algunos clasificadores no soportan predict_proba. Ajusta el pipeline/modelo o la API para manejarlo.
 
-⸻
-
-🖼️ Arquitectura
+## 🖼️ Arquitectura
 
 flowchart LR
     subgraph Usuario
