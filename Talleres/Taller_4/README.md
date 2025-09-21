@@ -8,7 +8,7 @@
 ## Documentación del funcionamiento
 En el siguiente video se presenta el funcionamiento del proyecto:
 
-[![Mira el video en YouTube](https://img.youtube.com/vi/XRCuq-75cLA/0.jpg)](https://www.youtube.com/watch?v=XRCuq-75cLA)
+[![Mira el video en YouTube](https://img.youtube.com/vi/JGJyILjxEKA/0.jpg)](https://www.youtube.com/watch?v=JGJyILjxEKA)
 
 Este repo levanta un entorno local estilo “nube” para todo el ciclo de vida de ML:
 **experimentación → tracking/artefactos → registro de modelos → inferencia en API**.
