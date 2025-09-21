@@ -7,7 +7,7 @@ services:
     depends_on:
       - mlflow_metadata_db
     ports:
-      - '5001:5000'
+      - '8080:5000'
     networks:
       - frontend
       - backend
@@ -18,8 +18,13 @@ services:
       - MLFLOW_S3_IGNORE_TLS=true
       - MLFLOW_BUCKET_NAME=mlflow
     command: server --backend-store-uri postgresql://admin:12345689@mlflow_metadata_db:5432/mlflow_meta --host 0.0.0.0 --serve-artifacts --artifacts-destination s3://mlflow
+    #healthcheck:
+    #  test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+    #  interval: 30s
+    #  timeout: 10s
+    #  retries: 3
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5001/"]
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:5000\")' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -40,8 +45,8 @@ services:
     image: quay.io/minio/minio:latest
     container_name: minio_container
     ports:
-      - '9000:9000'
-      - '9001:9001'
+      - '8001:9000'
+      - '8002:9001'
     networks:
       - frontend
       - backend
@@ -75,7 +80,7 @@ services:
       context: ./jupyter
       dockerfile: Dockerfile
     ports:
-      - "8888:8888"
+      - "8003:8888"
     volumes:
       - ./jupyter/notebooks:/app/notebooks
     environment:
@@ -96,7 +101,31 @@ services:
     networks:
       - backend
     restart: always
-
+  api_inference:
+    build:
+      context: api
+      dockerfile: Dockerfile 
+    container_name: penguins_api
+    ports:
+      - "8013:8013"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - REGISTERED_MODEL_NAME=PenguinsClassifier
+      - MODEL_STAGE_OR_VERSION=Production   # puedes poner "Staging" o "1"
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=supersecret
+    networks:
+      - backend
+    depends_on:
+      - mlflow
+      - minio
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8013/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3  
 
 networks:
   frontend:

@@ -1,0 +1,19 @@
+# FastAPI stack
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.8.2
+
+# MLflow client (para cargar modelo del registry)
+mlflow==2.14.3
+
+# Machine Learning runtime
+scikit-learn==1.4.2
+pandas==2.2.3
+joblib==1.4.2
+
+# S3/MinIO connectivity
+boto3==1.35.36
+
+# Database drivers (opcional, solo si tu API también consulta datos en Postgres)
+SQLAlchemy==2.0.36
+psycopg2-binary==2.9.9
