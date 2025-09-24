@@ -1,135 +1,464 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+---
+x-airflow-common:
+  &airflow-common
+  build: ./airflow
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres-airflow/airflow
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres-airflow/airflow
+    AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+    AIRFLOW__CORE__FERNET_KEY: ''
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'true'
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
+    AIRFLOW__API__AUTH_BACKENDS: "airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session"
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+    AIRFLOW__API_AUTH__JWT_SECRET: "your-super-secret-jwt-key-here-make-it-long-and-random"
+    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+    AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
+  volumes:
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/dags:/opt/airflow/dags
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/logs:/opt/airflow/logs
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/config:/opt/airflow/config
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/plugins:/opt/airflow/plugins
+  user: "${AIRFLOW_UID:-50000}:0"
+  depends_on:
+    &airflow-common-depends-on
+    redis:
+      condition: service_healthy
+    postgres-airflow:
+      condition: service_healthy
+
 services:
-  mlflow:
-    build:
-      context: mlflow
-      dockerfile: Dockerfile
-    container_name: mlflow_container
-    depends_on:
-      - mlflow_metadata_db
+  # ========== DATABASE SERVICES ==========
+  postgres-airflow:
+    container_name: postgres-airflow
+    image: postgres:13
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-airflow-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+    networks:
+      - database
+      - backend
+
+  # MySQL for MLflow metadata storage 
+  mysql-mlflow-metadata:
+    container_name: mysql_mlflow_metadata
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: mlflow_root_pass
+      MYSQL_DATABASE: mlflow_metadata
+      MYSQL_USER: mlflow_meta
+      MYSQL_PASSWORD: mlflow_meta_pass
+    volumes:
+      - mysql-mlflow-metadata:/var/lib/mysql
+    command: ["--default-authentication-plugin=mysql_native_password"]
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -umlflow_meta -pmlflow_meta_pass --silent"]
+      interval: 10s
+      retries: 20
+      start_period: 20s
+    restart: always
+    networks:
+      - database
+
+  # MySQL for training datasets and data management
+  mysql-training-data:
+    container_name: mysql_training_data
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: training_root_pass
+      MYSQL_DATABASE: training_datasets
+      MYSQL_USER: data_user
+      MYSQL_PASSWORD: data_user_pass
+    volumes:
+      - mysql-training-data:/var/lib/mysql
+    command: ["--default-authentication-plugin=mysql_native_password"]
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -udata_user -pdata_user_pass --silent"]
+      interval: 10s
+      retries: 20
+      start_period: 20s
+    restart: always
+    networks:
+      - database
+
+  redis:
+    container_name: redis_main
+    image: redis:7.2-bookworm
+    expose:
+      - 6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 30s
+      retries: 50
+      start_period: 30s
+    restart: always
+    networks:
+      - database
+
+  # ========== AIRFLOW SERVICES ==========
+  airflow-apiserver:
+    <<: *airflow-common
+    container_name: airflow_apiserver
+    command: api-server
     ports:
-      - '8080:5000'
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
     networks:
       - frontend
       - backend
+
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: airflow_scheduler
+    command: scheduler
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+    networks:
+      - backend
+
+  airflow-dag-processor:
+    <<: *airflow-common
+    container_name: airflow_dag_processor
+    command: dag-processor
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type DagProcessorJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+    networks:
+      - backend
+
+  airflow-worker:
+    <<: *airflow-common
+    container_name: airflow_worker
+    command: celery worker
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - 'celery --app airflow.providers.celery.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}" || celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"'
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    environment:
+      <<: *airflow-common-env
+      DUMB_INIT_SETSID: "0"
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-apiserver:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+    networks:
+      - backend
+
+  airflow-triggerer:
+    <<: *airflow-common
+    container_name: airflow_triggerer
+    command: triggerer
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+    networks:
+      - backend
+
+  airflow-init:
+    <<: *airflow-common
+    container_name: airflow_init
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        if [[ -z "${AIRFLOW_UID}" ]]; then
+          echo
+          echo -e "\033[1;33mWARNING!!!: AIRFLOW_UID not set!\e[0m"
+          echo "If you are on Linux, you SHOULD follow the instructions below to set "
+          echo "AIRFLOW_UID environment variable, otherwise files will be owned by root."
+          echo "For other operating systems you can get rid of the warning with manually created .env file:"
+          echo "    See: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#setting-the-right-airflow-user"
+          echo
+          export AIRFLOW_UID=$$(id -u)
+        fi
+        mkdir -v -p /opt/airflow/{logs,dags,plugins,config}
+        echo "Airflow version:"
+        /entrypoint airflow version
+        echo "Running airflow config list to create default config file if missing."
+        /entrypoint airflow config list >/dev/null
+        echo "Change ownership of files in /opt/airflow to ${AIRFLOW_UID}:0"
+        chown -R "${AIRFLOW_UID}:0" /opt/airflow/
+        echo "Change ownership of files in shared volumes to ${AIRFLOW_UID}:0"
+        chown -v -R "${AIRFLOW_UID}:0" /opt/airflow/{logs,dags,plugins,config}
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_MIGRATE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+      _PIP_ADDITIONAL_REQUIREMENTS: ''
+    user: "0:0"
+    networks:
+      - backend
+
+  # ========== ML SERVICES ==========
+  mlflow:
+    container_name: mlflow_server
+    build: ./mlflow
     environment:
       - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
       - AWS_ACCESS_KEY_ID=admin
       - AWS_SECRET_ACCESS_KEY=supersecret
       - MLFLOW_S3_IGNORE_TLS=true
-      - MLFLOW_BUCKET_NAME=mlflow
-    command: server --backend-store-uri postgresql://admin:12345689@mlflow_metadata_db:5432/mlflow_meta --host 0.0.0.0 --serve-artifacts --artifacts-destination s3://mlflow
-    #healthcheck:
-    #  test: ["CMD", "curl", "-f", "http://localhost:5000/"]
-    #  interval: 30s
-    #  timeout: 10s
-    #  retries: 3
+      - MLFLOW_BUCKET_NAME=mlflow-artifacts
+    command: >
+      server
+      --backend-store-uri mysql+pymysql://mlflow_meta:mlflow_meta_pass@mysql-mlflow-metadata:3306/mlflow_metadata
+      --artifacts-destination s3://mlflow-artifacts
+      --serve-artifacts
+      --host 0.0.0.0
+      --port 5000
+    ports:
+      - "5000:5000"
     healthcheck:
-      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:5000\")' || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
     restart: always
-
-  mlflow_metadata_db:
-    image: postgres:16
-    container_name: mlflow_metadata_db_container
-    networks:
-      - backend
-    environment:
-      POSTGRES_DB: mlflow_meta
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: 12345689
-    restart: always
-
-  minio:
-    image: quay.io/minio/minio:latest
-    container_name: minio_container
-    ports:
-      - '8001:9000'
-      - '8002:9001'
+    depends_on:
+      mysql-mlflow-metadata:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      create-minio-buckets:
+        condition: service_completed_successfully
     networks:
       - frontend
-      - backend
+      - ml-services
+      - database
+
+  minio:
+    container_name: minio_server
+    image: quay.io/minio/minio:latest
     environment:
       - MINIO_ROOT_USER=admin
       - MINIO_ROOT_PASSWORD=supersecret
     command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console
+    volumes:
+      - minio-data:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
       timeout: 20s
       retries: 3
+      start_period: 10s
     restart: always
-
-  create_buckets:
-    image: minio/mc
-    container_name: mlflow_create_buckets_container
-    depends_on:
-      - minio
     networks:
-      - backend
+      - frontend
+      - ml-services
+
+  create-minio-buckets:
+    container_name: minio_bucket_creator
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
     entrypoint: >
       /bin/sh -c "
       sleep 5;
       /usr/bin/mc alias set myminio http://minio:9000 admin supersecret;
-      /usr/bin/mc mb -p myminio/mlflow;
+      /usr/bin/mc mb -p myminio/mlflow-artifacts;
+      # /usr/bin/mc mb -p myminio/training-datasets;
       exit 0;"
-
-  jupyter_lab:
-    build:
-      context: ./jupyter
-      dockerfile: Dockerfile
-    ports:
-      - "8003:8888"
-    volumes:
-      - ./jupyter/notebooks:/app/notebooks
-    environment:
-      - JUPYTER_ENABLE_LAB=yes
-      - JUPYTER_TOKEN=test_token
-      - JUPYTER_PASSWORD=test_password
     networks:
-      - backend
-    restart: always
+      - ml-services
 
-  postgresql:
-    image: postgres:16
-    container_name: main_db_container
+  # ========== APPLICATION SERVICES ==========
+  fastapi-app:
+    container_name: fastapi_application
+    build: ./api
     environment:
-      POSTGRES_DB: main_db
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: 12345689
-    networks:
-      - backend
-    restart: always
-
-  api_inference:
-    build:
-      context: api
-      dockerfile: Dockerfile 
-    container_name: penguins_api
-    ports:
-      - "8013:8013"
-    environment:
+      # MLflow configuration
       - MLFLOW_TRACKING_URI=http://mlflow:5000
-      - REGISTERED_MODEL_NAME=PenguinsClassifier
-      - MODEL_STAGE_OR_VERSION=Production   # puedes poner "Staging" o "1"
       - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
       - AWS_ACCESS_KEY_ID=admin
       - AWS_SECRET_ACCESS_KEY=supersecret
-    networks:
-      - backend
-    depends_on:
-      - mlflow
-      - minio
-    restart: always
+      # Database connections
+      - MLFLOW_DATABASE_URL=mysql://mlflow_meta:mlflow_meta_pass@mysql-mlflow-metadata:3306/mlflow_metadata
+      - TRAINING_DATABASE_URL=mysql://data_user:data_user_pass@mysql-training-data:3306/training_datasets
+    ports:
+      - "8000:8000"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8013/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 5s
-      retries: 3  
+      retries: 3
+      start_period: 30s
+    restart: always
+    depends_on:
+      mlflow:
+        condition: service_healthy
+      mysql-mlflow-metadata:
+        condition: service_healthy
+      mysql-training-data:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
+      - ml-services
+      - database
 
+  # ========== FLOWER (OPTIONAL) ==========
+  flower:
+    <<: *airflow-common
+    container_name: airflow_flower
+    command: celery flower
+    profiles:
+      - flower
+    ports:
+      - "5555:5555"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+    networks:
+      - frontend
+      - backend
+
+  # ========== CLI TOOLS ==========
+  airflow-cli:
+    <<: *airflow-common
+    container_name: airflow_cli
+    profiles:
+      - debug
+    environment:
+      <<: *airflow-common-env
+      CONNECTION_CHECK_MAX_COUNT: "0"
+    command:
+      - bash
+      - -c
+      - airflow
+    depends_on:
+      <<: *airflow-common-depends-on
+    networks:
+      - backend
+
+# ========== NETWORK CONFIGURATION ==========
 networks:
+  # Frontend network - for services that need external access
   frontend:
     driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: app-frontend
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+  # Backend network - for internal service communication
   backend:
     driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: app-backend
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+
+  # Database network - for database-specific communication
+  database:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: app-database
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
+
+  # ML Services network - for ML-specific service communication
+  ml-services:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: ml-services
+    ipam:
+      config:
+        - subnet: 172.23.0.0/16
+
+# ========== VOLUMES ==========
+volumes:
+  postgres-airflow-data:
+  mysql-mlflow-metadata:
+  mysql-training-data:
+  minio-data:
