@@ -101,6 +101,7 @@ services:
     networks:
       - backend
     restart: always
+
   api_inference:
     build:
       context: api
