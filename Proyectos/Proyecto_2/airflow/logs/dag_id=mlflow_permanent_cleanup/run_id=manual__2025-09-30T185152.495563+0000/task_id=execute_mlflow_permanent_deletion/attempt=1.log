@@ -1,0 +1,12 @@
+{"timestamp":"2025-09-30T18:52:16.482896","level":"info","event":"DAG bundles loaded: dags-folder","logger":"airflow.dag_processing.bundles.manager.DagBundlesManager"}
+{"timestamp":"2025-09-30T18:52:16.484205","level":"info","event":"Filling up the DagBag from /opt/airflow/dags/delete_experiments.py","logger":"airflow.models.dagbag.DagBag"}
+{"timestamp":"2025-09-30T18:52:22.878545Z","level":"info","event":"[2025-09-30 18:52:22] Iniciando eliminación permanente de activos MLflow.","chan":"stdout","logger":"task"}
+{"timestamp":"2025-09-30T18:52:22.879190Z","level":"info","event":"","chan":"stdout","logger":"task"}
+{"timestamp":"2025-09-30T18:52:22.880599Z","level":"info","event":"--- 1. PROCESANDO MODELO REGISTRADO: CovertypeClassifier ---","chan":"stdout","logger":"task"}
+{"timestamp":"2025-09-30T18:52:23.266811Z","level":"info","event":"[MODELO] No se encontraron versiones del modelo 'CovertypeClassifier'. Omitting.","chan":"stdout","logger":"task"}
+{"timestamp":"2025-09-30T18:52:23.267299Z","level":"info","event":"","chan":"stdout","logger":"task"}
+{"timestamp":"2025-09-30T18:52:23.267751Z","level":"info","event":"--- 2. PROCESANDO EXPERIMENTO: covertype_classification ---","chan":"stdout","logger":"task"}
+{"timestamp":"2025-09-30T18:52:23.563938Z","level":"info","event":"[EXP] Error al eliminar permanentemente el experimento 'covertype_classification'. Podría no existir o ya estar purgado: 'MlflowClient' object has no attribute 'purge_experiment'","chan":"stdout","logger":"task"}
+{"timestamp":"2025-09-30T18:52:23.564800Z","level":"info","event":"","chan":"stdout","logger":"task"}
+{"timestamp":"2025-09-30T18:52:23.565363Z","level":"info","event":"[2025-09-30 18:52:22] Limpieza de activos MLflow completada.","chan":"stdout","logger":"task"}
+{"timestamp":"2025-09-30T18:52:23.563373","level":"info","event":"Done. Returned value was: None","logger":"airflow.task.operators.airflow.providers.standard.operators.python.PythonOperator"}
