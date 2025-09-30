@@ -126,3 +126,7 @@
 {"timestamp":"2025-09-30T06:44:17.542912","level":"info","event":"Filling up the DagBag from /opt/airflow/dags/truncate_tables.py","logger":"airflow.models.dagbag.DagBag"}
 {"timestamp":"2025-09-30T06:44:48.227261","level":"info","event":"Filling up the DagBag from /opt/airflow/dags/truncate_tables.py","logger":"airflow.models.dagbag.DagBag"}
 {"timestamp":"2025-09-30T06:45:18.665385","level":"info","event":"Filling up the DagBag from /opt/airflow/dags/truncate_tables.py","logger":"airflow.models.dagbag.DagBag"}
+{"timestamp":"2025-09-30T06:45:49.087907","level":"info","event":"Filling up the DagBag from /opt/airflow/dags/truncate_tables.py","logger":"airflow.models.dagbag.DagBag"}
+{"timestamp":"2025-09-30T06:46:19.277441","level":"info","event":"Filling up the DagBag from /opt/airflow/dags/truncate_tables.py","logger":"airflow.models.dagbag.DagBag"}
+{"timestamp":"2025-09-30T06:46:49.856445","level":"info","event":"Filling up the DagBag from /opt/airflow/dags/truncate_tables.py","logger":"airflow.models.dagbag.DagBag"}
+{"timestamp":"2025-09-30T06:47:20.061485","level":"info","event":"Filling up the DagBag from /opt/airflow/dags/truncate_tables.py","logger":"airflow.models.dagbag.DagBag"}
