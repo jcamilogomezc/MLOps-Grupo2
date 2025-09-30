@@ -1,6 +1,0 @@
-model,accuracy,f1_macro
-logreg,1.0,1.0
-rf,1.0,1.0
-svc,1.0,1.0
-knn,1.0,1.0
-adaboost,0.782608695652174,0.5916375682693168

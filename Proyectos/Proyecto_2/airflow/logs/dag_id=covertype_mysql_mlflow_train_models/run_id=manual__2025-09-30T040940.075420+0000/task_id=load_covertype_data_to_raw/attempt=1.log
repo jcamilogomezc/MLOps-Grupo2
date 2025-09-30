@@ -1,0 +1,17 @@
+{"timestamp":"2025-09-30T04:10:41.822683","level":"info","event":"DAG bundles loaded: dags-folder, example_dags","logger":"airflow.dag_processing.bundles.manager.DagBundlesManager"}
+{"timestamp":"2025-09-30T04:10:41.824670","level":"info","event":"Filling up the DagBag from /opt/airflow/dags/ETL.py","logger":"airflow.models.dagbag.DagBag"}
+{"timestamp":"2025-09-30T04:10:44.783652","level":"warning","event":"/home/airflow/.local/lib/python3.12/site-packages/palmerpenguins/penguins.py:2: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.\n  import pkg_resources\n","logger":"py.warnings"}
+{"timestamp":"2025-09-30T04:10:44.856433Z","level":"info","event":"Task instance is in running state","chan":"stdout","logger":"task"}
+{"timestamp":"2025-09-30T04:10:44.861560Z","level":"info","event":" Previous state of the Task instance: TaskInstanceState.QUEUED","chan":"stdout","logger":"task"}
+{"timestamp":"2025-09-30T04:10:44.862191Z","level":"info","event":"Current task name:load_covertype_data_to_raw","chan":"stdout","logger":"task"}
+{"timestamp":"2025-09-30T04:10:44.862815Z","level":"info","event":"Dag name:covertype_mysql_mlflow_train_models","chan":"stdout","logger":"task"}
+{"timestamp":"2025-09-30T04:10:45.039601","level":"warning","event":"/home/airflow/.local/lib/python3.12/site-packages/airflow/models/connection.py:471: DeprecationWarning: Using Connection.get_connection_from_secrets from `airflow.models` is deprecated.Please use `get` on Connection from sdk(`airflow.sdk.Connection`) instead\n  warnings.warn(\n","logger":"py.warnings"}
+{"timestamp":"2025-09-30T04:10:45.568436","level":"warning","event":"empty cryptography key - values will not be stored encrypted.","logger":"airflow.models.crypto"}
+{"timestamp":"2025-09-30T04:10:45.580128","level":"info","event":"Connection Retrieved 'mysql_trn'","logger":"airflow.hooks.base"}
+{"timestamp":"2025-09-30T04:10:45.580568","level":"warning","event":"This setter is for backward compatibility and should not be used.\nSince the introduction of connection property, the providers listed below breaks due to assigning value to self.connection in their __init__ method.\n* apache-airflow-providers-mysql<5.7.1\n* apache-airflow-providers-elasticsearch<5.5.1\n* apache-airflow-providers-postgres<5.13.0","logger":"airflow.task.hooks.airflow.providers.mysql.hooks.mysql.MySqlHook"}
+{"timestamp":"2025-09-30T04:10:46.249086","level":"info","event":"Done loading. Loaded a total of 228 rows into covertype_raw","logger":"airflow.task.hooks.airflow.providers.mysql.hooks.mysql.MySqlHook"}
+{"timestamp":"2025-09-30T04:10:46.250211","level":"info","event":"Done. Returned value was: None","logger":"airflow.task.operators.airflow.providers.standard.operators.python.PythonOperator"}
+{"timestamp":"2025-09-30T04:10:46.270778Z","level":"info","event":"[LOAD] Total=228 | Insertadas=228","chan":"stdout","logger":"task"}
+{"timestamp":"2025-09-30T04:10:46.347266Z","level":"info","event":"Task instance in success state","chan":"stdout","logger":"task"}
+{"timestamp":"2025-09-30T04:10:46.350123Z","level":"info","event":" Previous state of the Task instance: TaskInstanceState.RUNNING","chan":"stdout","logger":"task"}
+{"timestamp":"2025-09-30T04:10:46.350971Z","level":"info","event":"Task operator:<Task(PythonOperator): load_covertype_data_to_raw>","chan":"stdout","logger":"task"}

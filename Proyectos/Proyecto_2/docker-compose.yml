@@ -28,11 +28,17 @@ x-airflow-common:
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
-    AIRFLOW__CORE__LOAD_EXAMPLES: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
     AIRFLOW__API__AUTH_BACKENDS: "airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session"
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
-    AIRFLOW__API_AUTH__JWT_SECRET: "your-super-secret-jwt-key-here-make-it-long-and-random"
+    AIRFLOW__API_AUTH__JWT_SECRET: "your-super-secret-jwt-key-here-make-it-long-and-random" # Required for JWT auth. airflow 3.0.6
+
+    # Connections for MLflow and training datasets
+    AIRFLOW_CONN_MYSQL_TRN: mysql://data_user:data_user_pass@mysql-training-data:3306/training_datasets # mySQL connection training datasets
+    AIRFLOW_CONN_API_URI: http://10.43.100.89:8080/data?group_number=3 # FastAPI connection
+    AIRFLOW_CONN_MLFLOW: http://mlflow:5000 # MLflow connection
+
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
   volumes:
@@ -110,6 +116,7 @@ services:
     restart: always
     networks:
       - database
+      - backend
 
   redis:
     container_name: redis_main
@@ -125,6 +132,7 @@ services:
     restart: always
     networks:
       - database
+      - backend
 
   # ========== AIRFLOW SERVICES ==========
   airflow-apiserver:
@@ -301,6 +309,7 @@ services:
       - frontend
       - ml-services
       - database
+      - backend
 
   minio:
     container_name: minio_server

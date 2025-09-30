@@ -10,7 +10,7 @@ import pandas as pd
 # ---------- Config ----------
 # Se pueden sobreescribir por variables de entorno
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000")
-REGISTERED_MODEL = os.getenv("REGISTERED_MODEL_NAME", "PenguinsClassifier")
+REGISTERED_MODEL = os.getenv("REGISTERED_MODEL_NAME", "CovertypeClassifier")
 MODEL_STAGE_OR_VERSION = os.getenv("MODEL_STAGE_OR_VERSION", "Production")  # "Production" o "Staging" o "1", "2", ...
 
 # Necesario para bajar artefactos desde MinIO (S3 compatible)
