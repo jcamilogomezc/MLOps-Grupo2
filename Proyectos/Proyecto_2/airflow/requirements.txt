@@ -6,3 +6,4 @@ scikit-learn==1.7.1
 joblib==1.5.1
 catboost==1.2.6
 requests==2.32.3
+mlflow==2.3.0
