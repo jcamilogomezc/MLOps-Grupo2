@@ -123,7 +123,6 @@ dmypy.json
 .pyre/
 
 # Airflow
-airflow/logs/
 airflow/*.pid
 airflow/*.log
 airflow/*.err
