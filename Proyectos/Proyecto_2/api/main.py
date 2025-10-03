@@ -11,28 +11,54 @@ import pandas as pd
 # Se pueden sobreescribir por variables de entorno
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000")
 REGISTERED_MODEL = os.getenv("REGISTERED_MODEL_NAME", "CovertypeClassifier")
-MODEL_STAGE_OR_VERSION = os.getenv("MODEL_STAGE_OR_VERSION", "Production")  # "Production" o "Staging" o "1", "2", ...
+MODEL_STAGE_OR_VERSION = os.getenv("MODEL_STAGE_OR_VERSION", "production")  # "Production" o "Staging" o "1", "2", ...
 
 # Necesario para bajar artefactos desde MinIO (S3 compatible)
 os.environ.setdefault("MLFLOW_S3_ENDPOINT_URL", "http://minio:9000")
 os.environ.setdefault("AWS_ACCESS_KEY_ID", "admin")
 os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "supersecret")
 
-app = FastAPI(title="Penguins Inference API", version="1.0.0")
+app = FastAPI(title="Covertype Inference API", version="1.0.0")
 
 # ---------- Esquemas ----------
-class PenguinInput(BaseModel):
-    # columnas RAW que espera el pipeline (preprocesador + modelo)
-    island: str = Field(..., examples=["Torgersen"])
-    sex: str = Field(..., examples=["male"])
-    bill_length_mm: float = Field(..., ge=0)
-    bill_depth_mm: float = Field(..., ge=0)
-    flipper_length_mm: float = Field(..., ge=0)
-    body_mass_g: float = Field(..., ge=0)
+
+class CovertypeInput(BaseModel):
+    """Input schema for Covertype classification predictions"""
+    elevation: int = Field(..., description="Elevation in meters")
+    aspect: int = Field(..., ge=0, le=360, description="Aspect in degrees azimuth")
+    slope: int = Field(..., ge=0, description="Slope in degrees")
+    horizontal_distance_to_hydrology: int = Field(..., description="Horizontal distance to nearest surface water features")
+    vertical_distance_to_hydrology: int = Field(..., description="Vertical distance to nearest surface water features")
+    horizontal_distance_to_roadways: int = Field(..., description="Horizontal distance to nearest roadway")
+    hillshade_9am: int = Field(..., ge=0, le=255, description="Hillshade index at 9am, summer solstice")
+    hillshade_noon: int = Field(..., ge=0, le=255, description="Hillshade index at noon, summer solstice")
+    hillshade_3pm: int = Field(..., ge=0, le=255, description="Hillshade index at 3pm, summer solstice")
+    horizontal_distance_to_fire_points: int = Field(..., description="Horizontal distance to nearest wildfire ignition points")
+    wilderness_area: str = Field(..., description="Wilderness area designation")
+    soil_type: str = Field(..., description="Soil type designation")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "elevation": 2500,
+                "aspect": 180,
+                "slope": 15,
+                "horizontal_distance_to_hydrology": 250,
+                "vertical_distance_to_hydrology": 50,
+                "horizontal_distance_to_roadways": 1500,
+                "hillshade_9am": 200,
+                "hillshade_noon": 220,
+                "hillshade_3pm": 150,
+                "horizontal_distance_to_fire_points": 3000,
+                "wilderness_area": "Rawah",
+                "soil_type": "C2702"
+            }
+        }
+
 
 class PredictionOutput(BaseModel):
-    species: str
-    probabilities: dict
+    cover_type: str = Field(..., description="Predicted forest cover type (1-7)")
+    probabilities: dict = Field(..., description="Probability distribution over all cover types")
 
 # ---------- Carga de modelo ----------
 _model: mlflow.pyfunc.PyFuncModel | None = None
@@ -67,7 +93,7 @@ def health():
     return {"status": "ok"}
 
 @app.post("/predict", response_model=PredictionOutput)
-def predict(item: PenguinInput):
+def predict(item: CovertypeInput):
     if _model is None:
         raise HTTPException(status_code=500, detail="Model not loaded")
 
@@ -85,4 +111,4 @@ def predict(item: PenguinInput):
     except Exception:
         pass
 
-    return PredictionOutput(species=str(y_pred[0]), probabilities=probs)
+    return PredictionOutput(cover_type=str(y_pred[0]), probabilities=probs)
