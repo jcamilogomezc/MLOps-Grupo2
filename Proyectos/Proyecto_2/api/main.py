@@ -83,10 +83,6 @@ def _load_model():
     except Exception:
         _label_names = None
 
-@app.on_event("startup")
-def startup_event():
-    _load_model()
-
 # ---------- Endpoints ----------
 @app.get("/health")
 def health():
@@ -94,6 +90,12 @@ def health():
 
 @app.post("/predict", response_model=PredictionOutput)
 def predict(item: CovertypeInput):
+    global _model, _label_names
+    try:
+        _load_model()
+    except:
+        raise HTTPException(status_code=404, detail="Model not found in production yet")
+
     if _model is None:
         raise HTTPException(status_code=500, detail="Model not loaded")
 

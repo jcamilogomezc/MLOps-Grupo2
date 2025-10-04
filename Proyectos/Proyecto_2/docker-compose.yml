@@ -38,6 +38,8 @@ x-airflow-common:
     AIRFLOW_CONN_MYSQL_TRN: mysql://data_user:data_user_pass@mysql-training-data:3306/training_datasets # mySQL connection training datasets
     AIRFLOW_CONN_API_URI: http://10.43.100.89:8080/data?group_number=2 # FastAPI connection
     AIRFLOW_CONN_MLFLOW: http://mlflow:5000 # MLflow connection
+    AIRFLOW_DEPLOY_TO_PRODUCTION: TRUE
+    
 
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
