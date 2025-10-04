@@ -25,9 +25,12 @@ import mlflow
 import mlflow
 import mlflow.sklearn
 
+from mlflow.tracking import MlflowClient
+
 # ---------- Config ----------
 API_URI = os.getenv("AIRFLOW_CONN_API_URI", "http://10.43.100.89:8080/data?group_number=2")
 MLFLOW = os.getenv("AIRFLOW_CONN_MLFLOW", "http://mlflow:5000")
+DEPLOY_TO_PRODUCTION = os.getenv("AIRFLOW_DEPLOY_TO_PRODUCTION", "FALSE")
 
 # =========================
 # 1) LOAD RAW TO MySQL
@@ -269,7 +272,7 @@ def clean_covertype():
 # =========================
 # 4) Tranform & Train Models with MLflow
 # =========================
-def train_covertype_models():
+def train_covertype_models(ti):
     """
     Train multiple ML models on covertype clean data and log results to MLflow.
     Only registers the best performing model per batch to the model registry.
@@ -438,6 +441,8 @@ def train_covertype_models():
             
             print(f"[TRAIN] {name} - Accuracy: {acc:.4f}, F1-macro: {f1:.4f}, Run ID: {current_run_id}")
     
+    model_version_number = None
+
     # Register only the best model to the model registry
     if best_run_id is not None:
         try:
@@ -452,6 +457,7 @@ def train_covertype_models():
                     "training_date": context['ds']
                 }
             )
+            model_version_number = model_version.version
             print(f"[REGISTRY] Best model '{best_name}' registered as version {model_version.version} (Run ID: {best_run_id})")
         except Exception as e:
             print(f"[REGISTRY] Warning: Could not register best model: {e}")
@@ -479,6 +485,8 @@ def train_covertype_models():
     print(metrics_df.to_string(index=False))
     print(f"\n[BEST] {best_name} (f1_macro={best_f1:.4f}) registered to model registry")
     print(f"[BEST] Run ID: {best_run_id}")
+
+    ti.xcom_push(key="model_version", value=model_version_number)
     
     return {
         "best_model": best_name,
@@ -488,64 +496,23 @@ def train_covertype_models():
         "metrics": metrics_df.to_dict('records')
     }
 
-def train_models_with_mlflow():
-    mlflow.set_tracking_uri(
-        os.getenv("AIRFLOW_CONN_MLFLOW", "http://mlflow:5000"))
-    mlflow.set_experiment("covertype_classification")
 
-    # Load clean data
-    sql_hook = MySqlHook(mysql_conn_id="mysql_trn")
-    with sql_hook.get_conn() as conn:
-        df = pd.read_sql("SELECT * FROM covertype_clean", conn)
+def deploy_to_production(ti):
+    if DEPLOY_TO_PRODUCTION == 'FALSE':
+        return True
+    
+    mlflow.set_tracking_uri(MLFLOW)
+    client = MlflowClient()
 
-    # Prepare features
-    X = df.drop(['cover_type', 'id', 'inserted_at'], axis=1)
-    y = df['cover_type']
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42)
-
-    # Preprocessing pipeline
-    numeric_features = ['elevation', 'aspect', 'slope', ...]
-    categorical_features = ['wilderness_area', 'soil_type']
-
-    preprocessor = ColumnTransformer([
-        ('num', StandardScaler(), numeric_features),
-        ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)
-    ])
-
-    # Train multiple models
-    models = {
-        'logistic_regression': LogisticRegression(max_iter=1000),
-        'random_forest': RandomForestClassifier(n_estimators=100),
-        'svm': SVC(),
-        'knn': KNeighborsClassifier(),
-        'catboost': CatBoostClassifier(verbose=0)
-    }
-
-    best_model = None
-    best_score = 0
-
-    for model_name, model in models.items():
-        with mlflow.start_run(run_name=model_name):
-            pipeline = Pipeline(
-                [('preprocessor', preprocessor), ('classifier', model)])
-            pipeline.fit(X_train, y_train)
-            y_pred = pipeline.predict(X_test)
-
-            accuracy = accuracy_score(y_test, y_pred)
-            f1 = f1_score(y_test, y_pred, average='weighted')
-
-            mlflow.log_params(model.get_params())
-            mlflow.log_metrics({'accuracy': accuracy, 'f1_score': f1})
-            mlflow.sklearn.log_model(pipeline, "model")
-
-            if accuracy > best_score:
-                best_score = accuracy
-                best_model = pipeline
-
-    print(f"Best accuracy: {best_score}")
-
+    try:
+        client.transition_model_version_stage(
+            name = "CovertypeClassifier",
+            version = ti.xcom_pull(task_ids="train_covertype_models", key="model_version"),
+            stage="Production",
+            archive_existing_versions=True
+        )
+    except Exception as e:
+        print(f"[TRANSITION_MODEL] Warning: Could not transition model: {e}")
 
 # =========================
 # DAG
@@ -630,4 +597,9 @@ with DAG(
         python_callable=train_covertype_models
     )
 
-    create_tables >> load_raw >> check_batch >> truncate_clean >> clean_data >> train_models
+    deploy_to_production = PythonOperator(
+        task_id="deploy_to_production",
+        python_callable=deploy_to_production
+    )
+
+    create_tables >> load_raw >> check_batch >> truncate_clean >> clean_data >> train_models >> deploy_to_production
