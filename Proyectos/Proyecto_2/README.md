@@ -226,4 +226,4 @@ Reproducir y automatizar el ciclo de vida completo de un modelo ML.
 **Cómo aplicarlo:**  
 Con `docker compose up -d` levantas todo el entorno en minutos, ideal para entornos de práctica, prototipado o CI/CD en MLOps.
 
-[![Mira el video en YouTube](https://img.youtube.com/vi/JGJyILjxEKA/0.jpg)](https://www.youtube.com/watch?v=JGJyILjxEKA)
+[![Mira el video en YouTube](https://img.youtube.com/vi/-s2GT-5wVvA/0.jpg)](https://www.youtube.com/watch?v=-s2GT-5wVvA)
