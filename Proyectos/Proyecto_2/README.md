@@ -164,14 +164,29 @@ fastapi_application    Up (healthy)   0.0.0.0:8000->8000/tcp
 ### Solicitud
 
 ```bash
-curl -X POST "http://10.43.100.84:8000/predict"      -H "Content-Type: application/json"      -d '{"culmen_length_mm":45.0,"culmen_depth_mm":18.7,"flipper_length_mm":195.0,"body_mass_g":3500,"sex":"MALE"}'
+curl -X POST "http://10.43.100.84:8000/predict" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "aspect": 42,
+           "elevation": 3123,
+           "hillshade_3pm": 123,
+           "hillshade_9am": 222,
+           "hillshade_noon": 212,
+           "horizontal_distance_to_fire_points": 2912,
+           "horizontal_distance_to_hydrology": 323,
+           "horizontal_distance_to_roadways": 5042,
+           "slope": 13,
+           "soil_type": "C7746",
+           "vertical_distance_to_hydrology": 59,
+           "wilderness_area": "Rawah"
+        }'
 ```
 
 ### Respuesta esperada
 
 ```json
 {
-  "species": "Adelie",
+  "covertype": 0,
   "probability": 0.97
 }
 ```
