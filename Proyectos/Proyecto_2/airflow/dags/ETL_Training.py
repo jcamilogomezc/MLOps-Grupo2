@@ -28,7 +28,7 @@ import mlflow.sklearn
 from mlflow.tracking import MlflowClient
 
 # ---------- Config ----------
-API_URI = os.getenv("AIRFLOW_CONN_API_URI", "http://10.43.100.89:8080/data?group_number=2")
+API_URI = os.getenv("AIRFLOW_CONN_API_URI", "http://10.43.100.103:8080/data?group_number=2")
 MLFLOW = os.getenv("AIRFLOW_CONN_MLFLOW", "http://mlflow:5000")
 DEPLOY_TO_PRODUCTION = os.getenv("AIRFLOW_DEPLOY_TO_PRODUCTION", "FALSE")
 
