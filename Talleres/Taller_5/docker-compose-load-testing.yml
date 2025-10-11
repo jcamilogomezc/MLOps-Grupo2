@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  locust:
+    build:
+      context: ./locust
+      dockerfile: .
+    # The cotainer name and the ports must be delated when replicates are created
+    container_name: locust
+    ports:
+      - "8089:8089"
+    depends_on:
+      - api
+    environment:
+      - LOCUST_HOST=http://0.0.0.0:8000
