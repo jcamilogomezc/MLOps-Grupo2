@@ -1,0 +1,150 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+inference_api/venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+profile_default/
+ipython_config.py
+
+# IPython
+.ipython/
+
+# PyCharm
+.idea/
+*.iml
+.idea_modules/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Docker
+.dockerignore
+
+# MLflow
+mlruns/
+mlartifacts/
+mlflow.db
+*.db
+
+# Airflow
+airflow.db
+airflow.cfg
+airflow-webserver.pid
+logs/
+unittests.cfg
+airflow_variables.json
+*.log
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.env
+.envrc
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Model files (optional - uncomment if models are too large)
+# *.pkl
+# *.h5
+# *.joblib
+# *.pt
+# *.pth
+# *.onnx
+
+# Data files (optional - uncomment if data files are too large)
+# *.csv
+# *.parquet
+# *.json
+# data/
+
+# Coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Locust
+locust.log
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+.temporary
+
+# IDE
+*.sublime-project
+*.sublime-workspace
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
