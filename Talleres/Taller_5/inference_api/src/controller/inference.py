@@ -7,5 +7,5 @@ async def health():
 
 @app.post("/predict")
 async def predict():
-    # The must be loaded from MLflow and make the prediction with the training library
+    # The model must be loaded from MLflow and make the prediction with the training library
     return {"prediction": "ok"}
