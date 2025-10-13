@@ -1,14 +1,18 @@
-# FastAPI stack
+# FastAPI stack with performance enhancements
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 pydantic==2.8.2
+orjson==3.10.7  # For faster JSON serialization
+gunicorn==22.0.0  # Compatible with mlflow 2.14.3
 
-# MLflow client (para cargar modelo del registry)
+# MLflow client
 mlflow==2.14.3
 
-# Core ML stack - exact compatible versions
-pycaret==3.3.2
-pandas==2.1.4
-joblib==1.3.2
+# Core ML stack - optimized versions
+numpy==1.26.4  # Fast array operations (NO pandas for predictions)
 scikit-learn==1.4.2
-numpy==1.26.4
+joblib==1.3.2
+
+# Optional: Only if you need pycaret for training
+# pycaret==3.3.2
+# pandas==2.1.4

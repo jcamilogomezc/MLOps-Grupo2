@@ -1,5 +1,4 @@
 services:
-
   mysql-mlflow-metadata:
     container_name: mysql_mlflow_metadata
     image: mysql:8.0
@@ -17,6 +16,8 @@ services:
     restart: always
     networks:
       - database
+    volumes:
+      - mysql_data:/var/lib/mysql
 
   mlflow:
     container_name: mlflow_server
@@ -35,7 +36,7 @@ services:
       --host 0.0.0.0
       --port 5000
     ports:
-      - "5001:5000"
+      - "8005:5000"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
       interval: 30s
@@ -61,6 +62,8 @@ services:
       - MINIO_ROOT_USER=admin
       - MINIO_ROOT_PASSWORD=supersecret
     command: server /data
+    ports:
+      - "8009:9000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
@@ -70,6 +73,8 @@ services:
     restart: always
     networks:
       - ml-services
+    volumes:
+      - minio_data:/data
 
   create-minio-buckets:
     container_name: minio_bucket_creator
@@ -82,45 +87,84 @@ services:
       sleep 5;
       /usr/bin/mc alias set myminio http://minio:9000 admin supersecret;
       /usr/bin/mc mb -p myminio/mlflow-artifacts;
-      # /usr/bin/mc mb -p myminio/training-datasets;
       exit 0;"
     networks:
       - ml-services
 
-  fastapi-app:
-    # build: ./inference_api
-    # image: germanaoq/inference-fast-api:v1.0
-    # https://hub.docker.com/repository/docker/jcamilogomezc/t5_inference_api/general
-    image: jcamilogomezc/t5_inference_api:v1.0
+  model-trainer:
+    build:
+      context: ./inference_api
+      dockerfile: Dockerfile.trainer
+    container_name: model_trainer
     environment:
-      # MLflow configuration
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
-      - REGISTERED_MODEL=linear_regression_model
-      - MODEL_STAGE_OR_VERSION=Production
+      - REGISTERED_MODEL_NAME=linear_regression_model
       - AWS_ACCESS_KEY_ID=admin
       - AWS_SECRET_ACCESS_KEY=supersecret
-    #ports:
-    #  - "8000:8000"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-    restart: always
     depends_on:
       mlflow:
         condition: service_healthy
       mysql-mlflow-metadata:
         condition: service_healthy
-      # If is required you have to use the db to training
     networks:
       - ml-services
+    restart: "no"  # Only run once
 
+  # OPTIMIZED: Inference API with performance tuning
+  fastapi-app:
+    # image: germanaoq/inference-fast-api:v1.0
+    # https://hub.docker.com/repository/docker/jcamilogomezc/t5_inference_api/general
+    # image: jcamilogomezc/t5_inference_api:v1.0
+    build:
+      context: ./inference_api
+      dockerfile: Dockerfile.inference
+    container_name: fastapi_inference_api
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - REGISTERED_MODEL_NAME=linear_regression_model
+      - MODEL_STAGE_OR_VERSION=Production
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=supersecret
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'  # Use all VM cores
+          memory: 8G   # Increase memory limit
+        reservations:
+          cpus: '3.0'
+          memory: 4G
+    depends_on:
+      model-trainer:
+        condition: service_completed_successfully
+      mlflow:
+        condition: service_healthy
+    networks:
+      - ml-services
+    # CRITICAL: Use shared memory for worker communication
+    shm_size: '2gb'
+    tmpfs:
+      - /dev/shm:size=2G
+    # CRITICAL: Increase ulimits for high connections
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+      nproc:
+        soft: 32768
+        hard: 32768
 
 networks:
-  # Database network - for database-specific communication
   database:
     driver: bridge
     driver_opts:
@@ -129,5 +173,9 @@ networks:
       config:
         - subnet: 172.22.0.0/16
 
-  # ML Services network - for ML-specific service communication
   ml-services:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  minio_data:
