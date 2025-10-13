@@ -111,14 +111,15 @@ services:
       - ml-services
     restart: "no"  # Only run once
 
-  # OPTIMIZED: Inference API with performance tuning
+  # OPTIMIZED: Inference API with performance tuning (scalable)
   fastapi-app:
-    # build:
-    #   context: ./inference_api
-    #   dockerfile: Dockerfile.inference
+    build:
+      context: ./inference_api
+      dockerfile: Dockerfile.inference
     # image: germanaoq/inference-fast-api:v1.0
     # https://hub.docker.com/repository/docker/jcamilogomezc/t5_inference_api/general
-    image: jcamilogomezc/t5_inference_api:v2.0
+    # image: jcamilogomezc/t5_inference_api:v2.0
+    # NOTE: No container_name to allow multiple replicas with --scale
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
@@ -126,8 +127,9 @@ services:
       - MODEL_STAGE_OR_VERSION=Production
       - AWS_ACCESS_KEY_ID=admin
       - AWS_SECRET_ACCESS_KEY=supersecret
-    ports:
-      - "8000:8000"
+    # NOTE: Use expose instead of ports - nginx will access internally
+    expose:
+      - "8000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -138,11 +140,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '4.0'  # Use all VM cores
-          memory: 8G   # Increase memory limit
-        reservations:
-          cpus: '3.0'
+          cpus: '2.0'  # Per replica limit
           memory: 4G
+        reservations:
+          cpus: '1.5'
+          memory: 2G
     depends_on:
       model-trainer:
         condition: service_completed_successfully
@@ -151,9 +153,9 @@ services:
     networks:
       - ml-services
     # CRITICAL: Use shared memory for worker communication
-    shm_size: '2gb'
+    shm_size: '1gb'
     tmpfs:
-      - /dev/shm:size=2G
+      - /dev/shm:size=1G
     # CRITICAL: Increase ulimits for high connections
     ulimits:
       nofile:
@@ -162,6 +164,25 @@ services:
       nproc:
         soft: 32768
         hard: 32768
+
+  # Nginx Load Balancer - distributes traffic to fastapi-app replicas
+  nginx-lb:
+    image: nginx:alpine
+    container_name: nginx_load_balancer
+    ports:
+      - "8000:80"  # Single external port exposed for load testing
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - fastapi-app
+    restart: always
+    networks:
+      - ml-services
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 networks:
   database:
