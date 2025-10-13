@@ -355,7 +355,7 @@ curl http://localhost:8000/health
 **Response**:
 ```json
 {
-  "prediction": "ok"
+  "prediction": 123.456 # May be different
 }
 ```
 
