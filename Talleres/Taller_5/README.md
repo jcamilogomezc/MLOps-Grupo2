@@ -122,14 +122,14 @@ Taller_5/
 ├── docker-compose-load-testing.yml    # Load testing configuration
 │
 ├── inference_api/                     # FastAPI inference service
-│   ├── Dockerfile
+│   ├── Dockerfile.inference
+│   ├── Dockerfile.trainer
 │   ├── requirements.txt
 │   └── src/
-│       ├── app.py                     # FastAPI application
 │       ├── controller/
 │       │   └── inference.py           # API endpoints
 │       └── service/
-│           └── training.py            # ML service logic
+│           └── training_standalone.py # ML service logic
 │
 ├── locust/                            # Load testing scripts
 │   ├── Dockerfile
@@ -150,7 +150,7 @@ Taller_5/
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/your-org/MLOps-Grupo2.git
+   git clone https://github.com/jcamilogomezc/MLOps-Grupo2.git
    cd MLOps-Grupo2/Talleres/Taller_5
    ```
 
@@ -176,8 +176,8 @@ Taller_5/
 
    - **Inference API**: http://localhost:8000
    - **API Documentation**: http://localhost:8000/docs
-   - **MLflow UI**: http://localhost:5001
-   - **MinIO Console**: http://localhost:9000 (if exposed)
+   - **MLflow UI**: http://localhost:8005
+   - **MinIO Console**: http://localhost:8009 (if exposed)
 
 5. **Test the API**
 
@@ -448,7 +448,7 @@ We welcome contributions to improve this project! Please follow these guidelines
 2. **Clone your fork**
 
    ```bash
-   git clone https://github.com/your-username/MLOps-Grupo2.git
+   git clone https://github.com/jcamilogomezc/MLOps-Grupo2.git
    cd MLOps-Grupo2
    ```
 
