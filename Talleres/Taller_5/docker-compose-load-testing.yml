@@ -3,11 +3,12 @@ version: "3.8"
 services:
   locust:
     build: ./locust
-    # The cotainer name and the ports must be delated when replicates are created
+    # The container name and the ports must be deleted when replicates are created
     container_name: locust
     ports:
       - "8089:8089"
     environment:
-      - LOCUST_HOST=http://10.43.100.84:8000 # PUJ VM. Use the target service IP
+      # Points to Nginx load balancer which distributes across all FastAPI replicas
+      - LOCUST_HOST=http://10.43.100.84:8000  # PUJ VM. Port 8000 now goes through Nginx LB
       - LOCUST_USERS=10000
       - LOCUST_SPAWN_RATE=500
