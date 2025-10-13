@@ -1,5 +1,3 @@
-
-
 services:
 
   mysql-mlflow-metadata:
@@ -90,16 +88,20 @@ services:
       - ml-services
 
   fastapi-app:
-    container_name: inference_api
-    image: germanaoq/inference-fast-api:v1.0
+    # build: ./inference_api
+    # image: germanaoq/inference-fast-api:v1.0
+    # https://hub.docker.com/repository/docker/jcamilogomezc/t5_inference_api/general
+    image: jcamilogomezc/t5_inference_api:v1.0
     environment:
       # MLflow configuration
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - REGISTERED_MODEL=linear_regression_model
+      - MODEL_STAGE_OR_VERSION=Production
       - AWS_ACCESS_KEY_ID=admin
       - AWS_SECRET_ACCESS_KEY=supersecret
-    ports:
-      - "8000:8000"
+    #ports:
+    #  - "8000:8000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s

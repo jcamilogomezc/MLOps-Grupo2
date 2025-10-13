@@ -14,4 +14,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 8000
 
 # Comando para ejecutar FastAPI con uvicorn
-CMD ["uvicorn", "src.controller.inference:app", "--host", "0.0.0.0", "--port", "8000"]
+#CMD ["uvicorn", "src.controller.inference:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/bin/sh", "-c", "python src/app.py && exec uvicorn src.controller.inference:app --host 0.0.0.0 --port 8000"]
