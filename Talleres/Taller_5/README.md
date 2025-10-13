@@ -1,44 +1,44 @@
-# Taller 5 - ML Inference API with Load Testing
+# Taller 5 - API de Inferencia de ML con Pruebas de Carga
 
-A production-ready MLOps project that demonstrates how to deploy a machine learning inference API using FastAPI, MLflow for model management, and Locust for load testing. This project includes containerized services orchestrated with Docker Compose.
+Proyecto MLOps listo para producción que demuestra cómo desplegar una API de inferencia de *machine learning* usando FastAPI, MLflow para la gestión de modelos y Locust para las pruebas de carga. Este proyecto incluye servicios contenedorizados orquestados con Docker Compose.
 
-## Table of Contents
+## Tabla de Contenidos
 
-- [Architecture](#architecture)
-- [Prerequisites](#prerequisites)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-  - [Running the Inference API](#running-the-inference-api)
-  - [Running Load Tests](#running-load-tests)
-- [Docker Hub Deployment](#docker-hub-deployment)
-- [API Endpoints](#api-endpoints)
-- [Load Testing](#load-testing)
-- [Contributing](#contributing)
-- [Troubleshooting](#troubleshooting)
+- [Arquitectura](#arquitectura)
+- [Prerrequisitos](#prerrequisitos)
+- [Estructura del Proyecto](#estructura-del-proyecto)
+- [Primeros Pasos](#primeros-pasos)
+  - [Levantar la API de Inferencia](#levantar-la-api-de-inferencia)
+  - [Ejecutar Pruebas de Carga](#ejecutar-pruebas-de-carga)
+- [Despliegue en Docker Hub](#despliegue-en-docker-hub)
+- [Endpoints de la API](#endpoints-de-la-api)
+- [Pruebas de Carga](#pruebas-de-carga)
+- [Contribuir](#contribuir)
+- [Solución de Problemas](#solución-de-problemas)
 
 ---
 
-## Architecture
+## Arquitectura
 
-The application consists of multiple microservices working together in a Docker-based infrastructure:
+La aplicación consta de múltiples microservicios que trabajan juntos en una infraestructura basada en Docker:
 
 ```mermaid
 graph TB
-    subgraph "Docker Network: ml-services"
-        Locust[Locust<br/>Load Testing]
-        API[FastAPI<br/>Inference API<br/>:8000]
-        MLflow[MLflow Server<br/>Model Registry<br/>:5000]
-        MinIO[MinIO<br/>S3 Storage<br/>:9000]
+    subgraph "Red Docker: ml-services"
+        Locust[Locust<br/>Pruebas de Carga]
+        API[FastAPI<br/>API de Inferencia<br/>:8000]
+        MLflow[Servidor MLflow<br/>Registro de Modelos<br/>:5000]
+        MinIO[MinIO<br/>Almacenamiento S3<br/>:9000]
     end
 
-    subgraph "Docker Network: database"
-        MySQL[(MySQL<br/>Metadata Store<br/>:3306)]
+    subgraph "Red Docker: database"
+        MySQL[(MySQL<br/>Metadatos<br/>:3306)]
     end
 
     Locust -->|HTTP POST /predict| API
-    API -->|Load Model| MLflow
-    MLflow -->|Store/Retrieve Artifacts| MinIO
-    MLflow -->|Metadata & Registry| MySQL
+    API -->|Cargar Modelo| MLflow
+    MLflow -->|Almacenar/Recuperar Artefactos| MinIO
+    MLflow -->|Metadatos & Registro| MySQL
 
     style API fill:#4CAF50,stroke:#2E7D32,stroke-width:3px,color:#fff
     style MLflow fill:#2196F3,stroke:#1565C0,stroke-width:3px,color:#fff
@@ -47,63 +47,63 @@ graph TB
     style Locust fill:#F44336,stroke:#C62828,stroke-width:2px,color:#fff
 ```
 
-### Architecture Overview
+### Resumen de la Arquitectura
 
-The system follows a microservices architecture with clear separation of concerns:
+El sistema sigue una arquitectura de microservicios con separación clara de responsabilidades:
 
-1. **Client Layer** (Locust) → Simulates user traffic and sends requests to API
-2. **API Layer** (FastAPI) → Handles inference requests and loads models from MLflow
-3. **Model Management Layer** (MLflow) → Manages ML models, experiments, and registry
-4. **Storage Layer** (MinIO + MySQL) → Persists artifacts and metadata
+1. **Capa de Cliente** (Locust) → Simula tráfico de usuarios y envía solicitudes a la API.
+2. **Capa de API** (FastAPI) → Maneja solicitudes de inferencia y carga modelos desde MLflow.
+3. **Capa de Gestión de Modelos** (MLflow) → Administra modelos, experimentos y registro.
+4. **Capa de Almacenamiento** (MinIO + MySQL) → Persiste artefactos y metadatos.
 
-### Data Flow
+### Flujo de Datos
 
-1. **Locust** sends HTTP POST requests to `/predict` endpoint
-2. **FastAPI Inference API** receives requests and loads the trained model from MLflow
-3. **MLflow Server** retrieves model artifacts from MinIO and metadata from MySQL
-4. **MySQL** stores experiment tracking data, model registry information, and metadata
-5. **MinIO** stores model artifacts, parameters, and metrics in S3-compatible storage
+1. **Locust** envía solicitudes HTTP POST al endpoint `/predict`.
+2. **API de Inferencia (FastAPI)** recibe las solicitudes y carga el modelo entrenado desde MLflow.
+3. **Servidor MLflow** recupera artefactos del modelo desde MinIO y metadatos desde MySQL.
+4. **MySQL** almacena datos de seguimiento de experimentos, información del registro de modelos y metadatos.
+5. **MinIO** guarda artefactos del modelo, parámetros y métricas en un almacenamiento compatible con S3.
 
-### Components
+### Componentes
 
-1. **FastAPI Inference API** ([inference_api/](inference_api/))
-   - Serves ML model predictions via REST API
-   - Loads models from MLflow Model Registry
-   - Built with Python 3.11 and FastAPI
-   - Exposes `/predict` and `/health` endpoints
+1. **API de Inferencia con FastAPI** ([inference_api/](inference_api/))
+   - Sirve predicciones del modelo vía REST.
+   - Carga modelos desde el Registro de Modelos de MLflow.
+   - Construida con Python 3.11 y FastAPI.
+   - Expone los endpoints `/predict` y `/health`.
 
-2. **MLflow Server** ([mlflow/](mlflow/))
-   - Manages ML model lifecycle
-   - Stores model artifacts in MinIO
-   - Tracks experiments and model versions
-   - Provides model registry capabilities
+2. **Servidor MLflow** ([mlflow/](mlflow/))
+   - Gestiona el ciclo de vida de modelos de ML.
+   - Almacena artefactos en MinIO.
+   - Registra experimentos y versiones de modelos.
+   - Provee capacidades de registro de modelos.
 
 3. **MinIO**
-   - S3-compatible object storage
-   - Stores MLflow artifacts and models
-   - Configured with bucket auto-creation
+   - Almacenamiento de objetos compatible con S3.
+   - Guarda artefactos y modelos de MLflow.
+   - Configurado con auto‑creación de *buckets*.
 
 4. **MySQL**
-   - Metadata backend for MLflow
-   - Stores experiment tracking data
-   - Persists model registry information
+   - Backend de metadatos para MLflow.
+   - Almacena datos de seguimiento de experimentos.
+   - Persiste información del registro de modelos.
 
 5. **Locust** ([locust/](locust/))
-   - Load testing framework
-   - Simulates concurrent users
-   - Provides web-based monitoring UI
+   - *Framework* de pruebas de carga.
+   - Simula usuarios concurrentes.
+   - Ofrece una UI web para monitoreo.
 
 ---
 
-## Prerequisites
+## Prerrequisitos
 
-Before starting, ensure you have the following installed:
+Antes de empezar, asegúrate de tener instalado:
 
-- **Docker** (version 20.10 or higher)
-- **Docker Compose** (version 2.0 or higher)
-- **Git** (for cloning and contributing)
+- **Docker** (versión 20.10 o superior)
+- **Docker Compose** (versión 2.0 o superior)
+- **Git** (para clonar y contribuir)
 
-To verify your installation:
+Para verificar la instalación:
 
 ```bash
 docker --version
@@ -112,96 +112,94 @@ docker-compose --version
 
 ---
 
-## Project Structure
+## Estructura del Proyecto
 
 ```
 Taller_5/
-├── README.md                          # This file
-├── Taller.md                          # Workshop instructions
-├── docker-compose-api.yml             # Main application stack
-├── docker-compose-load-testing.yml    # Load testing configuration
+├── README.md                          # Este archivo
+├── Taller.md                          # Instrucciones del taller
+├── docker-compose-api.yml             # *Stack* principal de la aplicación
+├── docker-compose-load-testing.yml    # Configuración de pruebas de carga
 │
-├── inference_api/                     # FastAPI inference service
+├── inference_api/                     # Servicio de inferencia con FastAPI
 │   ├── Dockerfile.inference
 │   ├── Dockerfile.trainer
 │   ├── requirements.txt
 │   └── src/
 │       ├── controller/
-│       │   └── inference.py           # API endpoints
+│       │   └── inference.py           # Endpoints de la API
 │       └── service/
-│           └── training_standalone.py # ML service logic
+│           └── training_standalone.py # Lógica del servicio de ML
 │
-├── locust/                            # Load testing scripts
+├── locust/                            # Scripts de pruebas de carga
 │   ├── Dockerfile
 │   ├── requirements.txt
-│   └── main.py                        # Locust test scenarios
+│   └── main.py                        # Escenarios de Locust
 │
-└── mlflow/                            # MLflow configuration
+└── mlflow/                            # Configuración de MLflow
     ├── Dockerfile
     └── requirements.txt
 ```
 
 ---
 
-## Getting Started
+## Primeros Pasos
 
-### Running the Inference API
+### Levantar la API de Inferencia
 
-1. **Clone the repository**
+1. **Clonar el repositorio**
 
    ```bash
    git clone https://github.com/jcamilogomezc/MLOps-Grupo2.git
    cd MLOps-Grupo2/Talleres/Taller_5
    ```
 
-2. **Start the services**
+2. **Iniciar los servicios**
 
    ```bash
    docker-compose -f docker-compose-api.yml up --build
    ```
 
-   This command will:
-   - Build the FastAPI inference API image
-   - Start MySQL database
-   - Start MinIO object storage
-   - Create required S3 buckets
-   - Start MLflow tracking server
-   - Start the inference API
+   Este comando:
+   - Construye la imagen de la API de inferencia con FastAPI.
+   - Inicia la base de datos MySQL.
+   - Inicia el almacenamiento de objetos MinIO.
+   - Crea los *buckets* S3 requeridos.
+   - Inicia el servidor de *tracking* MLflow.
+   - Inicia la API de inferencia.
 
-3. **Wait for services to be healthy**
+3. **Esperar a que los servicios estén saludables**
 
-   Monitor the logs until you see health check confirmations. This typically takes 30-60 seconds.
+   Monitorea los *logs* hasta ver confirmaciones de *health checks*. Esto suele tardar entre 30 y 60 segundos.
 
-4. **Access the services**
+4. **Acceder a los servicios**
 
-   - **Inference API**: http://localhost:8000
-   - **API Documentation**: http://localhost:8000/docs
-   - **MLflow UI**: http://localhost:8005
-   - **MinIO Console**: http://localhost:8009 (if exposed)
+   - **API de Inferencia**: http://localhost:8000
+   - **Documentación de la API**: http://localhost:8000/docs
+   - **UI de MLflow**: http://localhost:8005
+   - **Consola de MinIO**: http://localhost:8009 (si está expuesta)
 
-5. **Test the API**
+5. **Probar la API**
 
    ```bash
    # Health check
    curl http://localhost:8000/health
 
-   # Make a prediction
-   curl -X POST http://localhost:8000/predict \
-     -H "Content-Type: application/json" \
-     -d '{
+   # Realizar una predicción
+   curl -X POST http://localhost:8000/predict      -H "Content-Type: application/json"      -d '{
        "feature1": 5.3,
        "feature2": 2.1,
        "feature3": 0.8
      }'
    ```
 
-6. **Stop the services**
+6. **Detener los servicios**
 
    ```bash
    docker-compose -f docker-compose-api.yml down
    ```
 
-   To also remove volumes (data will be lost):
+   Para remover también los volúmenes (se perderán los datos):
 
    ```bash
    docker-compose -f docker-compose-api.yml down -v
@@ -209,36 +207,36 @@ Taller_5/
 
 ---
 
-### Running Load Tests
+### Ejecutar Pruebas de Carga
 
-1. **Ensure the API is running** (from previous section)
+1. **Asegúrate de que la API esté corriendo** (desde la sección anterior).
 
-2. **Start Locust**
+2. **Iniciar Locust**
 
    ```bash
    docker-compose -f docker-compose-load-testing.yml up --build
    ```
 
-3. **Access Locust UI**
+3. **Acceder a la UI de Locust**
 
-   Open your browser and navigate to: http://localhost:8089
+   Abre tu navegador y ve a: http://localhost:8089
 
-4. **Configure and run tests**
+4. **Configurar y ejecutar pruebas**
 
-   In the Locust UI:
-   - **Number of users**: Start with 10, gradually increase to 10,000
-   - **Spawn rate**: 500 users per second (as per workshop requirements)
-   - **Host**: Pre-configured to http://api:8000
+   En la UI de Locust:
+   - **Número de usuarios**: Empieza con 10, incrementa gradualmente hasta 10,000.
+   - **Tasa de *spawn***: 500 usuarios por segundo (según requisitos del taller).
+   - **Host**: Preconfigurado como http://10.43.100.84:8000 (VM PUJ)
 
-5. **Monitor results**
+5. **Monitorear resultados**
 
-   Locust provides real-time metrics:
-   - Requests per second (RPS)
-   - Response times (min, max, average, percentiles)
-   - Failure rates
-   - Number of active users
+   Locust muestra métricas en tiempo real:
+   - Solicitudes por segundo (RPS).
+   - Tiempos de respuesta (mín., máx., promedio, percentiles).
+   - Tasas de fallos.
+   - Número de usuarios activos.
 
-6. **Stop load tests**
+6. **Detener las pruebas de carga**
 
    ```bash
    docker-compose -f docker-compose-load-testing.yml down
@@ -246,104 +244,101 @@ Taller_5/
 
 ---
 
-## Docker Hub Deployment
+## Despliegue en Docker Hub
 
-### Building and Pushing the Inference API Image
+### Construir y Publicar la Imagen de la API de Inferencia
 
-1. **Build the Docker image**
+1. **Construir la imagen de Docker**
 
    ```bash
    cd inference_api
    docker build -t your-dockerhub-username/inference-fast-api:v1.0 .
    ```
 
-2. **Test the image locally**
+2. **Probar la imagen localmente**
 
    ```bash
-   docker run -p 8000:8000 \
-     -e MLFLOW_TRACKING_URI=http://localhost:5001 \
-     your-dockerhub-username/inference-fast-api:v1.0
+   docker run -p 8000:8000      -e MLFLOW_TRACKING_URI=http://localhost:5001      your-dockerhub-username/inference-fast-api:v1.0
    ```
 
-3. **Login to Docker Hub**
+3. **Iniciar sesión en Docker Hub**
 
    ```bash
    docker login
    ```
 
-   Enter your Docker Hub username and password when prompted.
+   Ingresa tu usuario y contraseña de Docker Hub cuando se te solicite.
 
-4. **Push the image**
+4. **Publicar la imagen**
 
    ```bash
    docker push your-dockerhub-username/inference-fast-api:v1.0
    ```
 
-5. **Tag additional versions** (optional)
+5. **Etiquetar versiones adicionales** (opcional)
 
    ```bash
-   # Tag as latest
-   docker tag your-dockerhub-username/inference-fast-api:v1.0 \
-     your-dockerhub-username/inference-fast-api:latest
+   # Etiquetar como latest
+   docker tag your-dockerhub-username/inference-fast-api:v1.0      your-dockerhub-username/inference-fast-api:latest
 
    docker push your-dockerhub-username/inference-fast-api:latest
    ```
 
-6. **Update docker-compose-api.yml**
+6. **Actualizar docker-compose-api.yml**
 
-   Replace the image name in [docker-compose-api.yml:94](docker-compose-api.yml#L94):
+   Reemplaza el nombre de la imagen en [docker-compose-api.yml:94](docker-compose-api.yml#L94):
 
    ```yaml
    fastapi-app:
      container_name: inference_api
-     image: your-dockerhub-username/inference-fast-api:v1.0  # Update this line
-     # ... rest of configuration
+     image: your-dockerhub-username/inference-fast-api:v1.0  # Actualiza esta línea
+     # ... resto de la configuración
    ```
 
-7. **Verify the deployment**
+7. **Verificar el despliegue**
 
-   Pull and run from Docker Hub:
+   Descargar y ejecutar desde Docker Hub:
 
    ```bash
    docker pull your-dockerhub-username/inference-fast-api:v1.0
    docker-compose -f docker-compose-api.yml up
    ```
 
-### Current Deployment
+### Despliegue Actual
 
-The current image is hosted at: `germanaoq/inference-fast-api:v1.0`
+La imagen actual se encuentra en: `jcamilogomezc/t5_inference_api:v2.0`
 
 ---
 
-## API Endpoints
+## Endpoints de la API
 
-### Health Check
+### *Health Check*
 
 **Endpoint**: `GET /health`
 
-**Description**: Checks if the API is running and healthy
+**Descripción**: Verifica si la API está corriendo y saludable.
 
-**Response**:
+**Respuesta**:
 ```json
 {
   "status": "ok"
 }
 ```
 
-**Example**:
+**Ejemplo**:
 ```bash
 curl http://localhost:8000/health
 ```
 
 ---
 
-### Prediction
+### Predicción
 
 **Endpoint**: `POST /predict`
 
-**Description**: Makes predictions using the trained ML model
+**Descripción**: Realiza predicciones usando el modelo entrenado.
 
-**Request Body**:
+**Cuerpo de la Solicitud**:
 ```json
 {
   "feature1": 5.3,
@@ -352,311 +347,307 @@ curl http://localhost:8000/health
 }
 ```
 
-**Response**:
+**Respuesta**:
 ```json
 {
-  "prediction": 123.456 # May be different
+  "prediction": 123.456 # Puede variar
 }
 ```
 
-**Example**:
+**Ejemplo**:
 ```bash
-curl -X POST http://localhost:8000/predict \
-  -H "Content-Type: application/json" \
-  -d '{"feature1": 5.3, "feature2": 2.1, "feature3": 0.8}'
+curl -X POST http://localhost:8000/predict   -H "Content-Type: application/json"   -d '{"feature1": 5.3, "feature2": 2.1, "feature3": 0.8}'
 ```
 
-**Interactive Documentation**:
+**Documentación Interactiva**:
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 
 ---
 
-## Load Testing
+## Pruebas de Carga
 
-### Test Configuration
+### Configuración de las Pruebas
 
-The Locust configuration in [locust/main.py](locust/main.py) defines:
+La configuración de Locust en [locust/main.py](locust/main.py) define:
 
-- **Wait time**: 1-2.5 seconds between requests per user
-- **Task**: POST request to `/predict` endpoint
-- **Payload**: Sample features for model inference
+- **Tiempo de espera**: 1–2.5 segundos entre solicitudes por usuario.
+- **Tarea**: petición POST al endpoint `/predict`.
+- **Carga útil**: *payload* de ejemplo para la inferencia del modelo.
 
-### Workshop Requirements
+### Requisitos del Taller
 
-As per [Taller.md](Taller.md), the goals are:
+Según [Taller.md](Taller.md), las metas son:
 
-1. **Find minimum resources** to support 10,000 concurrent users
-   - Add 500 users incrementally
-   - Monitor CPU, memory, and response times
-   - Adjust container resource limits
+1. **Encontrar recursos mínimos** para soportar 10,000 usuarios concurrentes.
+   - Agregar 500 usuarios de forma incremental.
+   - Monitorear CPU, memoria y tiempos de respuesta.
+   - Ajustar límites de recursos de los contenedores.
 
-2. **Test with replicas**
-   - Scale the inference API horizontally
-   - Compare single vs. multiple instances
-   - Document performance differences
+2. **Probar con réplicas**
+   - Escalar horizontalmente la API de inferencia.
+   - Comparar instancia única vs. múltiples instancias.
+   - Documentar diferencias de rendimiento.
 
-### Resource Limiting
+### Limitación de Recursos
 
-To limit container resources, modify [docker-compose-api.yml](docker-compose-api.yml):
+Para limitar recursos de contenedores, modifica [docker-compose-api.yml](docker-compose-api.yml):
 
 ```yaml
 fastapi-app:
-  # ... existing configuration
+  # ... configuración existente
   deploy:
     resources:
       limits:
-        cpus: '0.5'      # Limit to 0.5 CPU cores
-        memory: 512M      # Limit to 512MB RAM
+        cpus: '0.5'      # Limitar a 0.5 núcleos
+        memory: 512M     # Limitar a 512MB de RAM
       reservations:
         cpus: '0.25'
         memory: 256M
 ```
 
-### Scaling Replicas
+### Escalado por Réplicas
 
-To run multiple instances:
+Para ejecutar múltiples instancias:
 
 ```yaml
 fastapi-app:
-  # ... existing configuration
+  # ... configuración existente
   deploy:
-    replicas: 3        # Run 3 instances
-    # ... resource limits
+    replicas: 3        # Ejecutar 3 instancias
+    # ... límites de recursos
 ```
 
-Or use the command:
+O usa el comando:
 
 ```bash
 docker-compose -f docker-compose-api.yml up --scale fastapi-app=3
 ```
 
-**Note**: Remove `container_name` when using replicas, as each instance needs a unique name.
+**Nota**: Elimina `container_name` cuando uses réplicas, ya que cada instancia necesita un nombre único.
 
 ---
 
-## Contributing
+## Contribuir
 
-We welcome contributions to improve this project! Please follow these guidelines:
+¡Se agradecen contribuciones para mejorar este proyecto! Por favor, sigue estas pautas:
 
-### How to Contribute
+### Cómo Contribuir
 
-1. **Fork the repository**
+1. **Haz *fork* del repositorio**
 
-   Click the "Fork" button at the top right of the GitHub repository page.
+   Haz clic en el botón "Fork" en la parte superior derecha de la página del repositorio en GitHub.
 
-2. **Clone your fork**
+2. **Clona tu *fork***
 
    ```bash
    git clone https://github.com/jcamilogomezc/MLOps-Grupo2.git
    cd MLOps-Grupo2
    ```
 
-3. **Create a feature branch**
+3. **Crea una rama de *feature***
 
    ```bash
-   git checkout -b feature/your-feature-name
+   git checkout -b feature/tu-nombre-de-feature
    ```
 
-   Use descriptive branch names:
+   Usa nombres descriptivos de rama:
    - `feature/add-new-endpoint`
    - `bugfix/fix-prediction-error`
    - `docs/update-readme`
 
-4. **Make your changes**
+4. **Realiza tus cambios**
 
-   - Follow Python PEP 8 style guidelines
-   - Add comments for complex logic
-   - Update documentation as needed
-   - Test your changes locally
+   - Sigue las guías de estilo PEP 8 para Python.
+   - Agrega comentarios para lógica compleja.
+   - Actualiza documentación según sea necesario.
+   - Prueba tus cambios localmente.
 
-5. **Run tests**
+5. **Ejecuta pruebas**
 
    ```bash
-   # Start the services
+   # Inicia los servicios
    docker-compose -f docker-compose-api.yml up --build
 
-   # Test the endpoints
+   # Prueba los endpoints
    curl http://localhost:8000/health
-   curl -X POST http://localhost:8000/predict \
-     -H "Content-Type: application/json" \
-     -d '{"feature1": 1.0, "feature2": 2.0, "feature3": 3.0}'
+   curl -X POST http://localhost:8000/predict      -H "Content-Type: application/json"      -d '{"feature1": 1.0, "feature2": 2.0, "feature3": 3.0}'
    ```
 
-6. **Commit your changes**
+6. **Haz *commit* de tus cambios**
 
    ```bash
    git add .
    git commit -m "feat: add descriptive commit message"
    ```
 
-   Follow [Conventional Commits](https://www.conventionalcommits.org/):
-   - `feat:` - New feature
-   - `fix:` - Bug fix
-   - `docs:` - Documentation changes
-   - `refactor:` - Code refactoring
-   - `test:` - Adding tests
-   - `chore:` - Maintenance tasks
+   Sigue [Conventional Commits](https://www.conventionalcommits.org/):
+   - `feat:` - Nueva funcionalidad
+   - `fix:` - Corrección de *bug*
+   - `docs:` - Cambios en documentación
+   - `refactor:` - Refactorización
+   - `test:` - Agregar pruebas
+   - `chore:` - Tareas de mantenimiento
 
-7. **Push to your fork**
+7. ***Push* a tu *fork***
 
    ```bash
-   git push origin feature/your-feature-name
+   git push origin feature/tu-nombre-de-feature
    ```
 
-8. **Create a Pull Request**
+8. **Crea un *Pull Request***
 
-   - Go to the original repository on GitHub
-   - Click "New Pull Request"
-   - Select your fork and branch
-   - Fill in the PR template with:
-     - Description of changes
-     - Related issue numbers
-     - Testing performed
-     - Screenshots (if applicable)
+   - Ve al repositorio original en GitHub.
+   - Haz clic en "New Pull Request".
+   - Selecciona tu *fork* y rama.
+   - Completa la plantilla del PR con:
+     - Descripción de cambios.
+     - Números de issues relacionados.
+     - Pruebas realizadas.
+     - Capturas de pantalla (si aplica).
 
-### Pull Request Guidelines
+### Guías para Pull Requests
 
-- **Title**: Use clear, descriptive titles
-- **Description**: Explain what changes you made and why
-- **Testing**: Describe how you tested your changes
-- **Documentation**: Update README or docs if needed
-- **Code Quality**: Ensure code is clean and well-commented
-- **Small PRs**: Keep changes focused and manageable
+- **Título**: Claro y descriptivo.
+- **Descripción**: Explica qué cambiaste y por qué.
+- **Pruebas**: Describe cómo probaste tus cambios.
+- **Documentación**: Actualiza README o docs según corresponda.
+- **Calidad de Código**: Código limpio y bien comentado.
+- **PRs pequeños**: Cambios enfocados y manejables.
 
-### Code Style
+### Estilo de Código
 
-- **Python**: Follow PEP 8
-- **Docstrings**: Use Google-style docstrings
-- **Type Hints**: Add type hints where appropriate
-- **Comments**: Explain complex logic
+- **Python**: Sigue PEP 8.
+- **Docstrings**: Estilo Google.
+- **Type Hints**: Añádelos cuando aplique.
+- **Comentarios**: Explica la lógica compleja.
 
-### Reporting Issues
+### Reporte de Issues
 
-If you find a bug or have a suggestion:
+Si encuentras un *bug* o tienes una sugerencia:
 
-1. Check if the issue already exists
-2. Create a new issue with:
-   - Clear title
-   - Detailed description
-   - Steps to reproduce (for bugs)
-   - Expected vs. actual behavior
-   - Environment details (OS, Docker version, etc.)
+1. Verifica si el *issue* ya existe.
+2. Crea uno nuevo con:
+   - Título claro.
+   - Descripción detallada.
+   - Pasos para reproducir (para *bugs*).
+   - Comportamiento esperado vs. actual.
+   - Detalles de entorno (SO, versión de Docker, etc.).
 
-### Questions or Help
+### Preguntas o Ayuda
 
-- Open a GitHub Discussion
-- Tag issues with `question` label
-- Reach out to maintainers
+- Abre una Discusión en GitHub.
+- Etiqueta *issues* con `question`.
+- Contacta a los *maintainers*.
 
 ---
 
-## Troubleshooting
+## Solución de Problemas
 
-### Common Issues
+### Problemas Comunes
 
-#### Services won't start
+#### Los servicios no inician
 
-**Problem**: Containers fail to start or crash immediately
+**Problema**: Los contenedores fallan al iniciar o se caen inmediatamente.
 
-**Solutions**:
-- Check Docker daemon is running: `docker info`
-- Ensure ports are not in use: `lsof -i :8000`, `lsof -i :5001`
-- Check Docker logs: `docker-compose -f docker-compose-api.yml logs`
-- Verify Docker has enough resources (CPU, memory, disk)
+**Soluciones**:
+- Verifica que el *daemon* de Docker esté corriendo: `docker info`.
+- Asegúrate de que los puertos no estén en uso: `lsof -i :8000`, `lsof -i :5001`.
+- Revisa *logs* de Docker: `docker-compose -f docker-compose-api.yml logs`.
+- Verifica que Docker tenga recursos suficientes (CPU, memoria, disco).
 
-#### Port already in use
+#### Puerto en uso
 
-**Problem**: `Error: bind: address already in use`
+**Problema**: `Error: bind: address already in use`
 
-**Solutions**:
+**Soluciones**:
 ```bash
-# Find process using the port (e.g., 8000)
+# Encontrar el proceso usando el puerto (ej., 8000)
 lsof -i :8000
 
-# Kill the process
+# Matar el proceso
 kill -9 <PID>
 
-# Or change the port in docker-compose-api.yml
+# O cambiar el puerto en docker-compose-api.yml
 ports:
-  - "8001:8000"  # Use 8001 instead
+  - "8001:8000"  # Usar 8001 en su lugar
 ```
 
-#### Health checks failing
+#### *Health checks* fallando
 
-**Problem**: Services marked as unhealthy
+**Problema**: Servicios marcados como *unhealthy*.
 
-**Solutions**:
-- Wait longer (initial startup takes 30-60 seconds)
-- Check service logs: `docker logs mlflow_server`
-- Verify dependencies are healthy: `docker-compose ps`
-- Check resource constraints
+**Soluciones**:
+- Espera un poco más (el arranque inicial tarda 30–60 s).
+- Revisa logs del servicio: `docker logs mlflow_server`.
+- Verifica dependencias: `docker-compose ps`.
+- Revisa restricciones de recursos.
 
-#### MLflow can't connect to MySQL
+#### MLflow no puede conectarse a MySQL
 
-**Problem**: `Can't connect to MySQL server`
+**Problema**: `Can't connect to MySQL server`
 
-**Solutions**:
-- Ensure MySQL is healthy: `docker-compose ps`
-- Check health check in [docker-compose-api.yml:14-18](docker-compose-api.yml#L14-L18)
-- Restart services: `docker-compose down && docker-compose up`
+**Soluciones**:
+- Asegura que MySQL esté saludable: `docker-compose ps`.
+- Revisa el *health check* en [docker-compose-api.yml:14-18](docker-compose-api.yml#L14-L18).
+- Reinicia servicios: `docker-compose down && docker-compose up`.
 
-#### MinIO bucket not created
+#### Bucket de MinIO no creado
 
-**Problem**: MLflow can't store artifacts
+**Problema**: MLflow no puede almacenar artefactos.
 
-**Solutions**:
-- Check bucket creator logs: `docker logs minio_bucket_creator`
-- Manually create bucket:
+**Soluciones**:
+- Revisa logs del creador de *buckets*: `docker logs minio_bucket_creator`.
+- Crear *bucket* manualmente:
   ```bash
   docker exec -it minio_server mc alias set myminio http://localhost:9000 admin supersecret
   docker exec -it minio_server mc mb myminio/mlflow-artifacts
   ```
 
-#### Load tests not connecting to API
+#### Locust no conecta con la API
 
-**Problem**: Locust can't reach the inference API
+**Problema**: Locust no puede alcanzar la API de inferencia.
 
-**Solutions**:
-- Ensure API is running: `curl http://localhost:8000/health`
-- Check network configuration in docker-compose files
-- Verify `LOCUST_HOST` environment variable
-- Check firewall/security settings
+**Soluciones**:
+- Verifica que la API esté arriba: `curl http://localhost:8000/health`.
+- Revisa configuración de redes en los archivos de compose.
+- Verifica la variable `LOCUST_HOST`.
+- Revisa firewall/seguridad.
 
-#### Out of memory errors
+#### Errores por falta de memoria (OOM)
 
-**Problem**: Container crashes due to OOM
+**Problema**: El contenedor se cae por OOM.
 
-**Solutions**:
-- Increase Docker memory limit (Docker Desktop settings)
-- Add resource limits to containers
-- Reduce number of replicas
-- Optimize model size
+**Soluciones**:
+- Incrementa el límite de memoria en Docker Desktop.
+- Añade límites de recursos a los contenedores.
+- Reduce el número de réplicas.
+- Optimiza el tamaño del modelo.
 
-#### Cannot push to Docker Hub
+#### No se puede hacer *push* a Docker Hub
 
-**Problem**: Authentication or permission errors
+**Problema**: Errores de autenticación o permisos.
 
-**Solutions**:
+**Soluciones**:
 ```bash
-# Re-login
+# Reautenticarse
 docker logout
 docker login
 
-# Check credentials
+# Ver credenciales
 docker info | grep Username
 
-# Verify repository exists on Docker Hub
-# Create it if necessary at https://hub.docker.com
+# Verifica que el repositorio exista en Docker Hub
+# Créalo si es necesario en https://hub.docker.com
 ```
 
 ---
 
-## Environment Variables
+## Variables de Entorno
 
-Key environment variables used in [docker-compose-api.yml](docker-compose-api.yml):
+Variables clave usadas en [docker-compose-api.yml](docker-compose-api.yml):
 
-### MLflow Configuration
+### Configuración de MLflow
 ```bash
 MLFLOW_TRACKING_URI=http://mlflow:5000
 MLFLOW_S3_ENDPOINT_URL=http://minio:9000
@@ -664,13 +655,13 @@ MLFLOW_S3_IGNORE_TLS=true
 MLFLOW_BUCKET_NAME=mlflow-artifacts
 ```
 
-### MinIO Configuration
+### Configuración de MinIO
 ```bash
 MINIO_ROOT_USER=admin
 MINIO_ROOT_PASSWORD=supersecret
 ```
 
-### MySQL Configuration
+### Configuración de MySQL
 ```bash
 MYSQL_ROOT_PASSWORD=mlflow_root_pass
 MYSQL_DATABASE=mlflow_metadata
@@ -678,7 +669,7 @@ MYSQL_USER=mlflow_meta
 MYSQL_PASSWORD=mlflow_meta_pass
 ```
 
-### AWS Credentials (for MinIO S3 compatibility)
+### Credenciales de AWS (compatibilidad S3 para MinIO)
 ```bash
 AWS_ACCESS_KEY_ID=admin
 AWS_SECRET_ACCESS_KEY=supersecret
@@ -686,24 +677,24 @@ AWS_SECRET_ACCESS_KEY=supersecret
 
 ---
 
-## Additional Resources
+## Recursos Adicionales
 
-- **FastAPI Documentation**: https://fastapi.tiangolo.com
-- **MLflow Documentation**: https://mlflow.org/docs/latest/index.html
-- **Locust Documentation**: https://docs.locust.io
-- **Docker Compose Documentation**: https://docs.docker.com/compose
-- **MinIO Documentation**: https://min.io/docs/minio/linux/index.html
-
----
-
-## License
-
-This project is part of the MLOps course materials. Please check with course instructors regarding usage and distribution.
+- **Documentación de FastAPI**: https://fastapi.tiangolo.com
+- **Documentación de MLflow**: https://mlflow.org/docs/latest/index.html
+- **Documentación de Locust**: https://docs.locust.io
+- **Documentación de Docker Compose**: https://docs.docker.com/compose
+- **Documentación de MinIO**: https://min.io/docs/minio/linux/index.html
 
 ---
 
-## Authors
+## Licencia
+
+Este proyecto hace parte del material del curso de MLOps. Consulta con los instructores del curso sobre uso y distribución.
+
+---
+
+## Autores
 
 **MLOps - Grupo 2**
 
-For questions or support, please open an issue in the GitHub repository.
+Para preguntas o soporte, por favor abre un *issue* en el repositorio de GitHub.

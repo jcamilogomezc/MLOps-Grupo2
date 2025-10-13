@@ -8,4 +8,6 @@ services:
     ports:
       - "8089:8089"
     environment:
-      - LOCUST_HOST=http://10.43.100.84:8000 # PUJ VM
+      - LOCUST_HOST=http://10.43.100.84:8000 # PUJ VM. Use the target service IP
+      - LOCUST_USERS=10000
+      - LOCUST_SPAWN_RATE=500
