@@ -113,12 +113,12 @@ services:
 
   # OPTIMIZED: Inference API with performance tuning (scalable)
   fastapi-app:
-    build:
-      context: ./inference_api
-      dockerfile: Dockerfile.inference
+    # build:
+      # context: ./inference_api
+      # dockerfile: Dockerfile.inference
     # image: germanaoq/inference-fast-api:v1.0
     # https://hub.docker.com/repository/docker/jcamilogomezc/t5_inference_api/general
-    # image: jcamilogomezc/t5_inference_api:v2.0
+    image: jcamilogomezc/t5_inference_api:v2.0
     # NOTE: No container_name to allow multiple replicas with --scale
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow:5000

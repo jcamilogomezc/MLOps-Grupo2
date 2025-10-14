@@ -4,6 +4,7 @@ Proyecto MLOps listo para producción que demuestra cómo desplegar una API de i
 
 ## Tabla de Contenidos
 
+- [Documentación del funcionamiento](#documentación-del-funcionamiento)
 - [Arquitectura](#arquitectura)
 - [Prerrequisitos](#prerrequisitos)
 - [Estructura del Proyecto](#estructura-del-proyecto)
@@ -17,6 +18,12 @@ Proyecto MLOps listo para producción que demuestra cómo desplegar una API de i
 - [Solución de Problemas](#solución-de-problemas)
 
 ---
+
+## Documentación del funcionamiento
+
+En el siguiente video se presenta el funcionamiento del proyecto:
+
+[![Mira el video en YouTube](https://img.youtube.com/vi/-Mon_nXHy4s/0.jpg)](https://www.youtube.com/watch?v=-Mon_nXHy4s)
 
 ## Arquitectura
 
@@ -136,9 +143,12 @@ Taller_5/
 │   ├── requirements.txt
 │   └── main.py                        # Escenarios de Locust
 │
-└── mlflow/                            # Configuración de MLflow
-    ├── Dockerfile
-    └── requirements.txt
+├── mlflow/                            # Configuración de MLflow
+│   ├── Dockerfile
+│   └── requirements.txt
+│
+└── nginx/                             # Configuración de NGinx
+    └── nginx.conf
 ```
 
 ---
@@ -167,6 +177,12 @@ Taller_5/
    - Crea los *buckets* S3 requeridos.
    - Inicia el servidor de *tracking* MLflow.
    - Inicia la API de inferencia.
+
+   O iniciar los servicios escalando la API de inferencia a 3 réplicas:
+
+   ```bash
+   docker-compose -f docker-compose-api.yml up -d --scale fastapi-app=3
+   ```
 
 3. **Esperar a que los servicios estén saludables**
 
@@ -384,10 +400,40 @@ Según [Taller.md](Taller.md), las metas son:
    - Monitorear CPU, memoria y tiempos de respuesta.
    - Ajustar límites de recursos de los contenedores.
 
+Se utilizó la siguiente asignación de recursos y se logró un aproximado de **200 RPS** con un 10% de respuestas fallidas, al correr el servicio en una máquina virtual.  
+
+```yaml
+fastapi-app:
+  # ... configuración existente
+  deploy:
+    resources:
+      limits:
+        cpus: '4'      
+        memory: 8G    
+      reservations:
+        cpus: '2'
+        memory: 4G
+```
+
 2. **Probar con réplicas**
    - Escalar horizontalmente la API de inferencia.
    - Comparar instancia única vs. múltiples instancias.
    - Documentar diferencias de rendimiento.
+
+Se escaló el API de inferencia al hacer uso de 3 replicas. Se logró un aproximado de **400 RPS** con un 1% de respuestas fallidas. Se aplicó la siguiente asignación para cada replica.
+
+```yaml
+fastapi-app:
+  # ... configuración existente
+   deploy:
+   resources:
+      limits:
+         cpus: '2.0'  # Per replica limit
+         memory: 4G
+      reservations:
+         cpus: '1.5'
+         memory: 2G
+```
 
 ### Limitación de Recursos
 
