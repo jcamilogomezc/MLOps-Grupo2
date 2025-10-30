@@ -49,8 +49,8 @@ x-airflow-common:
   # In order to add custom dependencies or upgrade provider distributions you can use your extended image.
   # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
-  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:3.1.0}
-  # build: .
+  # image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:3.1.0}
+  build: ./airflow
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
@@ -59,8 +59,9 @@ x-airflow-common:
     AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ''
+    AIRFLOW__API_AUTH__JWT_SECRET: 'gt2Edq6LIRdv5k0DDznVOA=='
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
-    AIRFLOW__CORE__LOAD_EXAMPLES: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: False
     AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
     # yamllint disable rule:line-length
     # Use simple http server on scheduler for health checks
@@ -72,6 +73,9 @@ x-airflow-common:
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     # The following line can be used to set a custom config file, stored in the local config folder
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
+    # Database connection strings for raw and clean data
+    AIRFLOW_CONN_RAW_DATA: postgresql+psycopg2://rawdata_user:rawdata_password@postgres-raw-data:5432/raw_data_db
+    AIRFLOW_CONN_CLEAN_DATA: postgresql+psycopg2://cleandata_user:cleandata_password@postgres-clean-data:5432/clean_data_db
   volumes:
     - ${AIRFLOW_PROJ_DIR:-./airflow}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-./airflow}/logs:/opt/airflow/logs
@@ -88,6 +92,9 @@ x-airflow-common:
     - inference_net
 
 services:
+
+  # PIPELINES SERVICES
+
   postgres:
     image: postgres:16
     environment:
@@ -263,6 +270,11 @@ services:
         echo
         mkdir -v -p /opt/airflow/{logs,dags,plugins,config}
         echo
+        echo "Fixing permissions for logs directory"
+        echo
+        chown -R "${AIRFLOW_UID}:0" /opt/airflow/logs
+        chmod -R 775 /opt/airflow/logs
+        echo
         echo "Airflow version:"
         /entrypoint airflow version
         echo
@@ -299,6 +311,7 @@ services:
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
       _PIP_ADDITIONAL_REQUIREMENTS: ''
     user: "0:0"
+    restart: on-failure
 
   airflow-cli:
     <<: *airflow-common
@@ -315,6 +328,7 @@ services:
     depends_on:
       <<: *airflow-common-depends-on
 
+  # TRAIN MODELS SERVICES
 
   mlflow:
     container_name: mlflow_server
@@ -402,27 +416,45 @@ services:
     networks:
       - inference_net
 
-  # You can enable flower by adding "--profile flower" option e.g. docker-compose --profile flower up
-  # or by explicitly targeted on the command line e.g. docker-compose up flower.
-  # See: https://docs.docker.com/compose/profiles/
-  flower:
-    <<: *airflow-common
-    command: celery flower
-    profiles:
-      - flower
+  # DATA SERVICES
+
+  postgres-raw-data:
+    image: postgres:16
+    container_name: raw_data
+    environment:
+      POSTGRES_USER: rawdata_user
+      POSTGRES_PASSWORD: rawdata_password
+      POSTGRES_DB: raw_data_db
     ports:
-      - "5555:5555"
+      - "5433:5432"
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "pg_isready", "-U", "rawdata_user"]
+      interval: 10s
       retries: 5
-      start_period: 30s
+      start_period: 5s
     restart: always
-    depends_on:
-      <<: *airflow-common-depends-on
-      airflow-init:
-        condition: service_completed_successfully
+    networks:
+      - inference_net
+
+  postgres-clean-data:
+    image: postgres:16
+    container_name: clean_data
+    environment:
+      POSTGRES_USER: cleandata_user
+      POSTGRES_PASSWORD: cleandata_password
+      POSTGRES_DB: clean_data_db
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "cleandata_user"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+    networks:
+      - inference_net
+
+
 
 volumes:
   postgres-db-volume:

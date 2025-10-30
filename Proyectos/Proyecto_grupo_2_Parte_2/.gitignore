@@ -111,4 +111,5 @@ coverage.xml
 .idea/
 .vagrant/
 
-# If you intentionally track model or binary artifacts, remove or adapt the above patterns.
+# Data scientist data
+jupyter/notebooks/data/Diabetes/Diabetes.csv
