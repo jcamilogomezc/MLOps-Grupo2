@@ -19,7 +19,8 @@ RUN pip install --no-cache-dir \
     scipy \
     pandas \
     matplotlib \
-    seaborn
+    seaborn \
+    ydata-profiling
 
 # Install additional scientific packages (scipy-notebook equivalents)
 RUN pip install --no-cache-dir \
