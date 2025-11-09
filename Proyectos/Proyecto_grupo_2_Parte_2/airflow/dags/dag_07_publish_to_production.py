@@ -65,7 +65,7 @@ def publish_model_to_production(**context):
     print(f"{'='*60}\n")
 
     # Register model in Model Registry
-    model_uri = f"runs:/{run_id}/{model_name_param}"
+    model_uri = f"runs:/{run_id}/model_{model_name_param}"
     registered_model_name = "diabetes_readmission_model"
 
     print(f"Registering model '{registered_model_name}' in Model Registry...")
