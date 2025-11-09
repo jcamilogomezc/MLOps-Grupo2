@@ -1,0 +1,34 @@
+version: "3"
+
+services:
+  postgres-raw-data:
+      image: postgres:16
+      container_name: raw_data
+      environment:
+        POSTGRES_USER: rawdata_user
+        POSTGRES_PASSWORD: rawdata_password
+        POSTGRES_DB: raw_data_db
+      ports:
+        - "5433:5432"
+      healthcheck:
+        test: ["CMD", "pg_isready", "-U", "rawdata_user"]
+        interval: 10s
+        retries: 5
+        # start_period: 5s
+      restart: always
+
+  postgres-clean-data:
+    image: postgres:16
+    container_name: clean_data
+    environment:
+      POSTGRES_USER: cleandata_user
+      POSTGRES_PASSWORD: cleandata_password
+      POSTGRES_DB: clean_data_db
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "cleandata_user"]
+      interval: 10s
+      retries: 5
+      # start_period: 5s
+    restart: always
