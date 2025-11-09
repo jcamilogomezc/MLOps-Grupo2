@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.db.yml -o komposedbfiles/
+    kompose.version: 1.26.0 (40646f47)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: postgres-raw-data
+  name: postgres-raw-data
+spec:
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+  selector:
+    io.kompose.service: postgres-raw-data
+  type: LoadBalancer
+status:
+  loadBalancer: {}

@@ -31,7 +31,7 @@ def publish_model_to_production(**context):
     client = MlflowClient()
 
     # Get experiment
-    experiment_name = "diabetes_readmission_prediction"
+    experiment_name = 'diabetes_cumulative_batch_training'
     experiment = client.get_experiment_by_name(experiment_name)
 
     if experiment is None:

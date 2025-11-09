@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.db.yml -o komposedbfiles/
+    kompose.version: 1.26.0 (40646f47)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: postgres-clean-data
+  name: postgres-clean-data
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: postgres-clean-data
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.db.yml -o komposedbfiles/
+        kompose.version: 1.26.0 (40646f47)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: postgres-clean-data
+    spec:
+      containers:
+        - env:
+            - name: POSTGRES_DB
+              value: clean_data_db
+            - name: POSTGRES_PASSWORD
+              value: cleandata_password
+            - name: POSTGRES_USER
+              value: cleandata_user
+          image: postgres:16
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - cleandata_user
+            failureThreshold: 5
+            periodSeconds: 10
+          name: clean-data
+          ports:
+            - containerPort: 5432
+          resources: {}
+      restartPolicy: Always
+status: {}
