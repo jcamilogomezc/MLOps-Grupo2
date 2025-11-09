@@ -195,20 +195,6 @@ graph TB
     style P7 fill:#81c784,stroke:#2e7d32,stroke-width:3px
 ```
 
-### Component Legend
-
-| Icon Representation | Service | Technology | Port(s) |
-|---------------------|---------|------------|---------|
-| fa:fa-server | Airflow API | Apache Airflow 3.1.0 | 8001 |
-| fa:fa-calendar | Scheduler | Apache Airflow | Internal |
-| fa:fa-cog | Worker | Celery Executor | Internal |
-| fa:fa-database | Redis | Redis 7.2 | 6379 |
-| fa:fa-database | PostgreSQL | Postgres 16 | 5432 (various) |
-| fa:fa-chart-line | MLflow | MLflow 3.4.0 | 8002 |
-| fa:fa-cubes | MinIO | S3-compatible Storage | 9000/9001 |
-| fa:fa-network-wired | Minikube | Kubernetes Network | 192.168.58.2 |
-| fa:fa-brain | Training | scikit-learn 1.4.2 | N/A |
-
 ### Cumulative Batch Pipeline Flow
 
 This pipeline dynamically trains models on increasing data volumes to find the optimal training dataset size.
