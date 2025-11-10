@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: diabetes-ui
+  labels:
+    app: diabetes-ui
+    component: inference-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: diabetes-ui
+  template:
+    metadata:
+      labels:
+        app: diabetes-ui
+        component: inference-ui
+    spec:
+      containers:
+      - name: ui
+        image: diabetes-ui:latest
+        imagePullPolicy: Never  # Use local image in Minikube
+        ports:
+        - containerPort: 8501
+          name: http
+          protocol: TCP
+        env:
+        # API endpoint configuration
+        - name: API_URL
+          value: "http://diabetes-api:8000"  # Internal service name
+        # MLflow configuration (optional, for direct MLflow access if needed)
+        - name: MLFLOW_TRACKING_URI
+          value: "http://host.minikube.internal:8002"  # Change to host IP if needed
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      restartPolicy: Always
+

@@ -1,10 +1,13 @@
 #!/bin/bash
 
 # Simple script to start port forwarding from VM IP to Minikube
-# This forwards port 8000 on the VM to port 30080 on Minikube
+# This forwards:
+#   - Port 8000 on the VM to port 30080 on Minikube (API service)
+#   - Port 8010 on the VM to port 30085 on Minikube (UI service)
 
 VM_IP="${VM_IP:-10.43.100.95}"
-EXTERNAL_PORT="${EXTERNAL_PORT:-8000}"
+API_EXTERNAL_PORT="${API_EXTERNAL_PORT:-8000}"
+UI_EXTERNAL_PORT="${UI_EXTERNAL_PORT:-8010}"
 
 # Get Minikube IP
 MINIKUBE_IP=$(minikube ip 2>/dev/null)
@@ -14,15 +17,39 @@ if [ -z "$MINIKUBE_IP" ]; then
     exit 1
 fi
 
-MINIKUBE_PORT=30080
+API_MINIKUBE_PORT=30080
+UI_MINIKUBE_PORT=30085
+
+# Cleanup function to kill background processes on exit
+cleanup() {
+    echo ""
+    echo "Stopping port forwarding..."
+    if [ -n "$API_PID" ]; then
+        kill $API_PID 2>/dev/null
+    fi
+    if [ -n "$UI_PID" ]; then
+        kill $UI_PID 2>/dev/null
+    fi
+    exit 0
+}
+
+# Set up trap to call cleanup on script exit
+trap cleanup SIGINT SIGTERM
 
 echo "=========================================="
 echo "Port Forwarding Setup"
 echo "=========================================="
-echo "From: $VM_IP:$EXTERNAL_PORT"
-echo "To: $MINIKUBE_IP:$MINIKUBE_PORT"
+echo "API Forwarding:"
+echo "  From: $VM_IP:$API_EXTERNAL_PORT"
+echo "  To: $MINIKUBE_IP:$API_MINIKUBE_PORT"
 echo ""
-echo "Access API at: http://$VM_IP:$EXTERNAL_PORT"
+echo "UI Forwarding:"
+echo "  From: $VM_IP:$UI_EXTERNAL_PORT"
+echo "  To: $MINIKUBE_IP:$UI_MINIKUBE_PORT"
+echo ""
+echo "Access Services:"
+echo "  API: http://$VM_IP:$API_EXTERNAL_PORT"
+echo "  UI:  http://$VM_IP:$UI_EXTERNAL_PORT"
 echo ""
 echo "Press Ctrl+C to stop"
 echo ""
@@ -31,7 +58,22 @@ echo ""
 if command -v socat &> /dev/null; then
     echo "Using socat for port forwarding..."
     echo ""
-    socat TCP-LISTEN:$EXTERNAL_PORT,fork,reuseaddr TCP:$MINIKUBE_IP:$MINIKUBE_PORT
+    
+    # Start API port forwarding in background
+    socat TCP-LISTEN:$API_EXTERNAL_PORT,fork,reuseaddr TCP:$MINIKUBE_IP:$API_MINIKUBE_PORT &
+    API_PID=$!
+    echo "API port forwarding started (PID: $API_PID)"
+    
+    # Start UI port forwarding in background
+    socat TCP-LISTEN:$UI_EXTERNAL_PORT,fork,reuseaddr TCP:$MINIKUBE_IP:$UI_MINIKUBE_PORT &
+    UI_PID=$!
+    echo "UI port forwarding started (PID: $UI_PID)"
+    echo ""
+    echo "Port forwarding is active. Press Ctrl+C to stop."
+    echo ""
+    
+    # Wait for background processes
+    wait
 else
     echo "Error: socat is not installed"
     echo ""
@@ -70,8 +112,12 @@ else
     echo "   minikube tunnel"
     echo ""
     echo "2. Use iptables port forwarding (requires root):"
-    echo "   sudo iptables -t nat -A PREROUTING -p tcp --dport $EXTERNAL_PORT -j DNAT --to-destination $MINIKUBE_IP:$MINIKUBE_PORT"
-    echo "   sudo iptables -t nat -A POSTROUTING -p tcp -d $MINIKUBE_IP --dport $MINIKUBE_PORT -j MASQUERADE"
+    echo "   # API forwarding:"
+    echo "   sudo iptables -t nat -A PREROUTING -p tcp --dport $API_EXTERNAL_PORT -j DNAT --to-destination $MINIKUBE_IP:$API_MINIKUBE_PORT"
+    echo "   sudo iptables -t nat -A POSTROUTING -p tcp -d $MINIKUBE_IP --dport $API_MINIKUBE_PORT -j MASQUERADE"
+    echo "   # UI forwarding:"
+    echo "   sudo iptables -t nat -A PREROUTING -p tcp --dport $UI_EXTERNAL_PORT -j DNAT --to-destination $MINIKUBE_IP:$UI_MINIKUBE_PORT"
+    echo "   sudo iptables -t nat -A POSTROUTING -p tcp -d $MINIKUBE_IP --dport $UI_MINIKUBE_PORT -j MASQUERADE"
     echo ""
     echo "3. Use Python port forwarder (no installation needed):"
     echo "   python3 $SCRIPT_DIR/port-forward-python.py"
