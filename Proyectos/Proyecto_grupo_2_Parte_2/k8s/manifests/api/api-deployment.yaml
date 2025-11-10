@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: diabetes-api
+  labels:
+    app: diabetes-api
+    component: inference
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: diabetes-api
+  template:
+    metadata:
+      labels:
+        app: diabetes-api
+        component: inference
+    spec:
+      containers:
+      - name: api
+        image: diabetes-api:latest
+        imagePullPolicy: Never  # Use local image in Minikube
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        env:
+        # MLflow configuration
+        # Note: host.minikube.internal works on Mac/Windows Minikube
+        # On Linux, you may need to use the host gateway IP instead
+        # To find the host IP: minikube ssh "route -n get default" | grep gateway
+        # Or use: ip route show | grep default | awk '{print $3}'
+        - name: MLFLOW_TRACKING_URI
+          value: "http://host.minikube.internal:8002"  # Change to host IP if needed
+        - name: REGISTERED_MODEL_NAME
+          value: "diabetes_readmission_model"
+        - name: MODEL_STAGE_OR_VERSION
+          value: "Production"
+        # AWS/S3 configuration for MLflow artifacts (if using S3)
+        - name: AWS_ACCESS_KEY_ID
+          value: "admin"
+        - name: AWS_SECRET_ACCESS_KEY
+          value: "supersecret"
+        - name: MLFLOW_S3_ENDPOINT_URL
+          value: "http://host.minikube.internal:9000"  # Change to host IP if needed
+        - name: MLFLOW_S3_IGNORE_TLS
+          value: "true"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      restartPolicy: Always
+
