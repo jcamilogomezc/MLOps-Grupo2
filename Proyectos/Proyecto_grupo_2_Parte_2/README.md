@@ -33,48 +33,6 @@ Watch the video demonstration of this MLOps platform:
 
 This MLOps platform automates the complete lifecycle of a diabetes patient readmission prediction model using an innovative **Cumulative Batch Training** approach. The system provides end-to-end ML workflow automation from data ingestion to production deployment, including model serving, monitoring, and load testing capabilities.
 
-### Core Features
-
-**Training Pipeline**:
-- **Automated Data Pipeline**: Download, split into batches, and store diabetes hospital readmission dataset (~101,767 records with 50+ features)
-- **Dynamic Batch Processing**: Automatically divides training data into batches of 15,000 records and creates cumulative views
-- **Cumulative Model Training**: Trains 4 classification algorithms (Logistic Regression, Decision Tree, Random Forest, Gradient Boosting) on **7 progressively larger datasets** (15K → 102K records) to identify optimal training data size
-- **Parallel Execution**: Trains **28 models in parallel** (7 cumulative datasets × 4 algorithms) using Airflow Celery workers
-- **Experiment Tracking**: Uses MLflow to track all experiments, parameters, metrics, and model artifacts with full lineage
-- **Intelligent Model Selection**: Automatically selects the best performing model across all 28 trained models based on validation F1 score
-- **Model Registry**: Publishes production-ready models to MLflow Model Registry with version control
-
-**Inference & Serving**:
-- **REST API**: FastAPI-based inference service with async support and thread pool execution
-- **Model Serving**: Loads production models from MLflow Model Registry with automatic preprocessing
-- **Health Checks**: Built-in health and readiness probes for Kubernetes deployment
-- **Metrics Export**: Prometheus metrics for request latency, throughput, and error rates
-- **Horizontal Scaling**: Kubernetes HPA (Horizontal Pod Autoscaler) for automatic scaling based on CPU/memory usage
-
-**User Interface**:
-- **Web UI**: Streamlit-based interface for interactive predictions
-- **Model Information**: Display model metadata, version, and performance metrics
-- **Interactive Forms**: User-friendly forms for entering patient data
-- **Prediction Results**: Visual display of predictions with probability distributions
-
-**Monitoring & Observability**:
-- **Prometheus**: Metrics collection and storage
-- **Grafana**: Visualization dashboards for API performance and model metrics
-- **Custom Metrics**: Request count, latency, prediction classes, error rates
-- **Service Discovery**: Automatic scraping of API metrics endpoints
-
-**Load Testing**:
-- **Locust**: Distributed load testing framework
-- **Realistic Scenarios**: Simulates user behavior with patient data
-- **Performance Metrics**: Measures throughput, response times, and error rates
-- **Scalability Testing**: Validates HPA behavior under load
-
-**Infrastructure**:
-- **Hybrid Deployment**: Combines Docker Compose (orchestration & ML services) with Kubernetes (inference services) via Minikube network bridge
-- **High Availability**: Multi-replica deployments with load balancing
-- **Auto-scaling**: HPA with configurable CPU and memory thresholds
-- **Resource Management**: Resource requests and limits for optimal performance
-
 **Key Technologies**: Apache Airflow 3.1.0, MLflow 3.4.0, FastAPI, Streamlit, PostgreSQL 16, Redis 7.2, MinIO S3, Docker, Kubernetes (Minikube), Prometheus, Grafana, Locust, scikit-learn 1.4.2, Python 3.10
 
 ---
