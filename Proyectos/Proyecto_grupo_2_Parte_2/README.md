@@ -2,6 +2,10 @@
 
 A production-ready MLOps platform for predicting diabetes patient hospital readmission using Apache Airflow, MLflow, Docker, and Kubernetes. This project demonstrates end-to-end machine learning workflow automation including data ingestion, preprocessing, model training, experiment tracking, and deployment.
 
+## Presented By:
+* Germán Andrés Ospina Quintero
+* Juan Camilo Gomez Cano
+
 ## Table of Contents
 
 - [Video Explanation](#video-explanation)
