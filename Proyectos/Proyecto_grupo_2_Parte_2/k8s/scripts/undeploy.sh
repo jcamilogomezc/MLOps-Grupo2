@@ -290,13 +290,21 @@ if [ "$UNDEPLOY_MONITORING" = true ]; then
         echo -e "${YELLOW}Grafana deployment not found (may already be deleted)${NC}"
     fi
     
-    # Delete Grafana configmap
+    # Delete Grafana configmaps
     if $KUBECTL_CMD get configmap grafana-datasources &> /dev/null; then
-        echo -e "${YELLOW}Deleting Grafana configmap...${NC}"
+        echo -e "${YELLOW}Deleting Grafana datasources configmap...${NC}"
         $KUBECTL_CMD delete configmap grafana-datasources
-        echo -e "${GREEN}✓ Grafana configmap deleted${NC}"
+        echo -e "${GREEN}✓ Grafana datasources configmap deleted${NC}"
     else
-        echo -e "${YELLOW}Grafana configmap not found (may already be deleted)${NC}"
+        echo -e "${YELLOW}Grafana datasources configmap not found (may already be deleted)${NC}"
+    fi
+    
+    if $KUBECTL_CMD get configmap grafana-dashboards &> /dev/null; then
+        echo -e "${YELLOW}Deleting Grafana dashboards configmap...${NC}"
+        $KUBECTL_CMD delete configmap grafana-dashboards
+        echo -e "${GREEN}✓ Grafana dashboards configmap deleted${NC}"
+    else
+        echo -e "${YELLOW}Grafana dashboards configmap not found (may already be deleted)${NC}"
     fi
     
     # Undeploy Prometheus

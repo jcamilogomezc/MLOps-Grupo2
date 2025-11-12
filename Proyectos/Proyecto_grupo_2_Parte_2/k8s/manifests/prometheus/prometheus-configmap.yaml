@@ -8,8 +8,9 @@ metadata:
 data:
   prometheus.yml: |
     global:
-      scrape_interval: 15s
-      evaluation_interval: 15s
+      scrape_interval: 5s
+      evaluation_interval: 5s
+      query_log_file: ""
       external_labels:
         cluster: 'minikube'
         environment: 'production'
@@ -20,10 +21,35 @@ data:
         static_configs:
           - targets: ['localhost:9090']
 
-      # Scrape Diabetes API metrics
+      # Scrape Diabetes API metrics from all pods using Kubernetes service discovery
       - job_name: 'diabetes-api'
-        static_configs:
-          - targets: ['diabetes-api:8000']
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - default
+        relabel_configs:
+          # Only scrape pods with label app=diabetes-api
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: diabetes-api
+          # Use pod IP and port from annotations or default
+          - source_labels: [__meta_kubernetes_pod_ip]
+            action: replace
+            target_label: __address__
+            replacement: $1:8000
+          # Set instance label to pod name
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: instance
+          # Set pod name label
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: pod
+          # Set namespace label
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: namespace
         metrics_path: '/metrics'
-        scrape_interval: 10s
+        scrape_interval: 5s
 

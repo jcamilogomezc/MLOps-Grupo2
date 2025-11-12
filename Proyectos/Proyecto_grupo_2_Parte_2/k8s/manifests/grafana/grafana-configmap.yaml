@@ -13,8 +13,14 @@ data:
         type: prometheus
         access: proxy
         url: http://prometheus:9090
+        uid: prometheus
         isDefault: true
         editable: true
         jsonData:
-          timeInterval: "15s"
+          timeInterval: "5s"
+          queryTimeout: "60s"
+          httpMethod: "POST"
+          incrementalQueryOverlapWindow: "10m"
+        withCredentials: false
+        tlsSkipVerify: true
 

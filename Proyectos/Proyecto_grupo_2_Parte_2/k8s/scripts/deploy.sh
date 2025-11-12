@@ -26,25 +26,45 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Default: deploy all
+# Default: deploy API, UI, and Monitoring (Locust is optional)
 DEPLOY_API=true
 DEPLOY_UI=true
 DEPLOY_MONITORING=true
 DEPLOY_LOCUST=false  # Locust is optional, not deployed by default
 
+# Track which individual flags (--api, --ui, etc.) were used
+# This helps determine if we should reset defaults when individual flags are used
+API_FLAG_USED=false
+UI_FLAG_USED=false
+MONITORING_FLAG_USED=false
+LOCUST_FLAG_USED=false
+EXPLICIT_ONLY_USED=false  # Track if --all or --*-only was used
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
+        --all)
+            DEPLOY_API=true
+            DEPLOY_UI=true
+            DEPLOY_MONITORING=true
+            DEPLOY_LOCUST=true
+            EXPLICIT_ONLY_USED=true
+            shift
+            ;;
         --api-only)
             DEPLOY_API=true
             DEPLOY_UI=false
             DEPLOY_MONITORING=false
+            DEPLOY_LOCUST=false
+            EXPLICIT_ONLY_USED=true
             shift
             ;;
         --ui-only)
             DEPLOY_API=false
             DEPLOY_UI=true
             DEPLOY_MONITORING=false
+            DEPLOY_LOCUST=false
+            EXPLICIT_ONLY_USED=true
             shift
             ;;
         --monitoring-only)
@@ -52,6 +72,7 @@ while [[ $# -gt 0 ]]; do
             DEPLOY_UI=false
             DEPLOY_MONITORING=true
             DEPLOY_LOCUST=false
+            EXPLICIT_ONLY_USED=true
             shift
             ;;
         --locust-only)
@@ -59,6 +80,27 @@ while [[ $# -gt 0 ]]; do
             DEPLOY_UI=false
             DEPLOY_MONITORING=false
             DEPLOY_LOCUST=true
+            EXPLICIT_ONLY_USED=true
+            shift
+            ;;
+        --api)
+            DEPLOY_API=true
+            API_FLAG_USED=true
+            shift
+            ;;
+        --ui)
+            DEPLOY_UI=true
+            UI_FLAG_USED=true
+            shift
+            ;;
+        --monitoring)
+            DEPLOY_MONITORING=true
+            MONITORING_FLAG_USED=true
+            shift
+            ;;
+        --locust)
+            DEPLOY_LOCUST=true
+            LOCUST_FLAG_USED=true
             shift
             ;;
         --skip-api)
@@ -75,6 +117,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --with-locust)
             DEPLOY_LOCUST=true
+            LOCUST_FLAG_USED=true
             shift
             ;;
         --skip-locust)
@@ -87,18 +130,31 @@ while [[ $# -gt 0 ]]; do
             echo "Deploy Diabetes API, UI, Monitoring stack, and Locust to Minikube"
             echo ""
             echo "Options:"
-            echo "  --api-only          Deploy only the API"
-            echo "  --ui-only           Deploy only the UI"
-            echo "  --monitoring-only   Deploy only Monitoring (Prometheus & Grafana)"
-            echo "  --locust-only       Deploy only Locust (load testing)"
-            echo "  --skip-api          Skip API deployment"
-            echo "  --skip-ui           Skip UI deployment"
-            echo "  --skip-monitoring   Skip Monitoring deployment"
-            echo "  --with-locust       Include Locust deployment (not deployed by default)"
-            echo "  --skip-locust       Skip Locust deployment"
-            echo "  -h, --help          Show this help message"
+            echo "  --all                Deploy all services (API, UI, Monitoring, Locust)"
+            echo "  --api-only           Deploy only the API"
+            echo "  --ui-only            Deploy only the UI"
+            echo "  --monitoring-only    Deploy only Monitoring (Prometheus & Grafana)"
+            echo "  --locust-only        Deploy only Locust (load testing)"
+            echo "  --api                Deploy API (can be combined with other options)"
+            echo "  --ui                 Deploy UI (can be combined with other options)"
+            echo "  --monitoring         Deploy Monitoring (can be combined with other options)"
+            echo "  --locust             Deploy Locust (can be combined with other options)"
+            echo "  --skip-api           Skip API deployment"
+            echo "  --skip-ui            Skip UI deployment"
+            echo "  --skip-monitoring    Skip Monitoring deployment"
+            echo "  --with-locust        Include Locust deployment (alias for --locust)"
+            echo "  --skip-locust        Skip Locust deployment"
+            echo "  -h, --help           Show this help message"
             echo ""
             echo "By default, API, UI, and Monitoring are deployed. Locust is optional."
+            echo ""
+            echo "Examples:"
+            echo "  $0                           # Deploy API, UI, and Monitoring (default)"
+            echo "  $0 --all                     # Deploy all services including Locust"
+            echo "  $0 --api --ui                # Deploy only API and UI"
+            echo "  $0 --api-only                # Deploy only API"
+            echo "  $0 --monitoring --locust     # Deploy only Monitoring and Locust"
+            echo "  $0 --skip-ui                 # Deploy API and Monitoring (skip UI)"
             exit 0
             ;;
         *)
@@ -108,6 +164,40 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# If individual flags (--api, --ui, etc.) were used without --all or --*-only,
+# reset defaults and only deploy what was explicitly requested
+# This ensures that when using --api --ui, only API and UI are deployed, not Monitoring (default)
+if [ "$EXPLICIT_ONLY_USED" = false ] && ([ "$API_FLAG_USED" = true ] || [ "$UI_FLAG_USED" = true ] || [ "$MONITORING_FLAG_USED" = true ] || [ "$LOCUST_FLAG_USED" = true ]); then
+    # Save the final state after all flags are processed (includes skip flags)
+    # At this point, all flags have been processed, so DEPLOY_* reflects the final state
+    FINAL_API=$DEPLOY_API
+    FINAL_UI=$DEPLOY_UI
+    FINAL_MONITORING=$DEPLOY_MONITORING
+    FINAL_LOCUST=$DEPLOY_LOCUST
+    
+    # Reset all to false (disable defaults)
+    DEPLOY_API=false
+    DEPLOY_UI=false
+    DEPLOY_MONITORING=false
+    DEPLOY_LOCUST=false
+    
+    # Enable only services where:
+    # 1. Individual flag was used (--api, --ui, etc.)
+    # 2. Final state is true (service wasn't skipped or was re-enabled)
+    if [ "$API_FLAG_USED" = true ] && [ "$FINAL_API" = true ]; then
+        DEPLOY_API=true
+    fi
+    if [ "$UI_FLAG_USED" = true ] && [ "$FINAL_UI" = true ]; then
+        DEPLOY_UI=true
+    fi
+    if [ "$MONITORING_FLAG_USED" = true ] && [ "$FINAL_MONITORING" = true ]; then
+        DEPLOY_MONITORING=true
+    fi
+    if [ "$LOCUST_FLAG_USED" = true ] && [ "$FINAL_LOCUST" = true ]; then
+        DEPLOY_LOCUST=true
+    fi
+fi
 
 echo "=========================================="
 echo "Deploying to Minikube"
@@ -133,6 +223,17 @@ if [ "$DEPLOY_LOCUST" = true ]; then
     echo -e "  ${GREEN}✓${NC} Locust (Load Testing)"
 else
     echo -e "  ${YELLOW}⊘${NC} Locust (skipped)"
+fi
+echo ""
+
+# Ask for confirmation before proceeding
+echo -e "${YELLOW}This will deploy the selected services to Minikube.${NC}"
+echo ""
+read -p "Do you want to continue? (y/N): " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo -e "${YELLOW}Deployment cancelled by user.${NC}"
+    exit 0
 fi
 echo ""
 
@@ -409,6 +510,11 @@ if [ "$DEPLOY_MONITORING" = true ]; then
         exit 1
     fi
     
+    if [ ! -f "$GRAFANA_MANIFESTS_DIR/grafana-dashboards-configmap.yaml" ]; then
+        echo -e "${RED}Error: grafana-dashboards-configmap.yaml not found${NC}"
+        exit 1
+    fi
+    
     if [ ! -f "$GRAFANA_MANIFESTS_DIR/grafana-deployment.yaml" ]; then
         echo -e "${RED}Error: grafana-deployment.yaml not found${NC}"
         exit 1
@@ -421,6 +527,7 @@ if [ "$DEPLOY_MONITORING" = true ]; then
     
     # Apply Grafana manifests
     $KUBECTL_CMD apply -f "$GRAFANA_MANIFESTS_DIR/grafana-configmap.yaml"
+    $KUBECTL_CMD apply -f "$GRAFANA_MANIFESTS_DIR/grafana-dashboards-configmap.yaml"
     $KUBECTL_CMD apply -f "$GRAFANA_MANIFESTS_DIR/grafana-deployment.yaml"
     $KUBECTL_CMD apply -f "$GRAFANA_MANIFESTS_DIR/grafana-service.yaml"
     

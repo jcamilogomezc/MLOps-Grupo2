@@ -4,6 +4,7 @@ A production-ready MLOps platform for predicting diabetes patient hospital readm
 
 ## Table of Contents
 
+- [Video Explanation](#video-explanation)
 - [Project Description](#project-description)
 - [Quick Start Guide](#quick-start-guide)
 - [Requirements](#requirements)
@@ -15,9 +16,16 @@ A production-ready MLOps platform for predicting diabetes patient hospital readm
 - [Using the Web UI](#step-9-using-the-web-ui)
 - [Monitoring with Prometheus & Grafana](#step-10-monitoring-with-prometheus--grafana)
 - [Load Testing with Locust](#step-11-load-testing-with-locust)
-- [Retrieving Trained Models](#retrieving-trained-models)
-- [Video Explanation](#video-explanation)
-- [Contributing](#contributing)
+
+---
+
+## Video Explanation
+
+Watch the video demonstration of this MLOps platform:
+
+[![Video Explanation](https://img.youtube.com/vi/IlCxL15DW5M/0.jpg)](https://youtu.be/IlCxL15DW5M)
+
+**Video Link**: [https://youtu.be/IlCxL15DW5M](https://youtu.be/IlCxL15DW5M)
 
 ---
 
@@ -67,8 +75,6 @@ This MLOps platform automates the complete lifecycle of a diabetes patient readm
 - **Auto-scaling**: HPA with configurable CPU and memory thresholds
 - **Resource Management**: Resource requests and limits for optimal performance
 
-**Key Innovation**: The cumulative batch training strategy answers the critical question: "How much data do we need for optimal performance?" by systematically training models on increasing data volumes (15K, 30K, 45K, 60K, 75K, 90K, 102K records) and comparing results.
-
 **Key Technologies**: Apache Airflow 3.1.0, MLflow 3.4.0, FastAPI, Streamlit, PostgreSQL 16, Redis 7.2, MinIO S3, Docker, Kubernetes (Minikube), Prometheus, Grafana, Locust, scikit-learn 1.4.2, Python 3.10
 
 ---
@@ -109,7 +115,7 @@ This MLOps platform automates the complete lifecycle of a diabetes patient readm
 5. **Deploy Inference Services**:
    ```bash
    cd k8s/scripts
-   ./deploy.sh
+   ./deploy.sh --all
    ```
 
 6. **Access Services**:
@@ -120,56 +126,6 @@ This MLOps platform automates the complete lifecycle of a diabetes patient readm
    - **Locust**: `http://<minikube-ip>:30189`
 
 For detailed instructions, see [How to Run the Project](#how-to-run-the-project).
-
----
-
-## Requirements
-
-### System Requirements
-
-- **Operating System**: Linux/macOS/Windows with WSL2
-- **RAM**: Minimum 8GB (16GB recommended)
-- **CPU**: Minimum 4 cores
-- **Disk Space**: 20GB free space
-- **Docker**: Version 20.10 or higher
-- **Docker Compose**: Version 2.0 or higher
-- **Minikube**: Version 1.30 or higher (for Kubernetes deployment)
-- **kubectl**: Version 1.25 or higher
-
-### Software Dependencies
-
-#### Python Dependencies (Airflow)
-```
-mlflow==3.4.0
-pycaret==3.3.2
-pandas==2.1.4
-joblib==1.3.2
-scikit-learn==1.4.2
-numpy==1.26.4
-pyarrow==15.0.0
-scipy==1.11.4
-```
-
-See [airflow/requirements.txt](airflow/requirements.txt) and [mlflow/requirements.txt](mlflow/requirements.txt) for complete dependency lists.
-
-#### Docker Images Used
-
-**Training & Orchestration**:
-- `apache/airflow:3.1.0` (custom build with ML dependencies)
-- `postgres:16` (Airflow metadata, MLflow metadata, data storage)
-- `redis:7.2-bookworm` (Airflow Celery broker)
-- `python:3.10-slim` (MLflow server)
-- `quay.io/minio/minio:latest` (S3-compatible object storage)
-- `minio/mc` (MinIO client)
-
-**Inference & Serving**:
-- `diabetes-api:latest` (FastAPI inference service - custom build)
-- `streamlit:latest` (Web UI - custom build)
-- `prom/prometheus:latest` (Metrics collection)
-- `grafana/grafana:latest` (Metrics visualization)
-- `locustio/locust:latest` (Load testing)
-
-See [api/Dockerfile](api/Dockerfile), [ui/Dockerfile](ui/Dockerfile), [locust/Dockerfile](locust/Dockerfile) for custom image builds.
 
 ---
 
@@ -429,38 +385,6 @@ graph TB
     style TESTER fill:#c5e1a5,stroke:#558b2f,stroke-width:2px
 ```
 
-### Key Architecture Features
-
-**Dynamic Cumulative Training**
-- Automatically determines batch count based on dataset size
-- Creates N cumulative datasets: each containing progressively more data
-- Trains 4 models on each cumulative dataset (N × 4 total models)
-- Identifies optimal training data size for best performance
-
-**Hybrid Docker + Kubernetes**
-- **Docker Compose**: Airflow orchestration, MLflow tracking, Redis queue, ML training services
-- **Kubernetes (Minikube)**: Inference API, UI, monitoring stack, load testing, databases
-- Minikube network bridge enables seamless communication between Docker and Kubernetes
-
-**Scalable Inference Infrastructure**
-- **High Availability**: Multiple API replicas (3-10 pods) with load balancing
-- **Auto-scaling**: HPA automatically scales API pods based on CPU/memory usage (70% CPU, 80% memory thresholds)
-- **Health Monitoring**: Liveness and readiness probes ensure service reliability
-- **Metrics Export**: Prometheus-compatible metrics endpoint on each API pod
-- **Service Discovery**: Automatic metrics scraping by Prometheus
-
-**Scalable Storage**
-- PostgreSQL: Raw batches, cumulative views, validation/test data
-- MinIO S3: Model artifacts, experiment files, preprocessing pipelines
-- Multi-database architecture for separation of concerns
-- MLflow Model Registry: Production model versioning and staging
-
-**Monitoring & Observability**
-- **Prometheus**: Collects metrics from all API pods (request count, latency, errors)
-- **Grafana**: Visualizes metrics with customizable dashboards
-- **Custom Metrics**: Prediction classes, error types, in-progress requests
-- **Alerting Ready**: Prometheus alerting rules can be configured for SLO violations
-
 ---
 
 ## Step-by-Step Workflow
@@ -663,24 +587,6 @@ For **each cumulative dataset** (0 through N), train **4 model types**:
    - Training timestamp
 5. Complete deployment workflow
 
-**Production Model Access**:
-```python
-import mlflow
-mlflow.set_tracking_uri("http://localhost:8002")
-model = mlflow.sklearn.load_model("models:/diabetes_readmission_model/Production")
-```
-
-### Pipeline Execution Summary
-
-**Total Execution Time**: ~1-2 hours (depending on hardware)
-
-**Key Advantages of Cumulative Batch Training**:
-- Identifies if more data actually improves performance
-- Finds the sweet spot between data collection cost and model accuracy
-- Provides insights into diminishing returns of larger datasets
-- Tests model scalability across different data volumes
-- Compares 4 algorithms at each data size for robustness
-
 ---
 
 ## How to Run the Project
@@ -765,10 +671,6 @@ minikube service postgres-raw-data --url
 minikube service postgres-clean-data --url
 ```
 
-**Expected Output**:
-- Raw Data DB: `192.168.58.2:31070`
-- Clean Data DB: `192.168.58.2:30236`
-
 ### Step 2: Start Docker Compose Services
 
 #### 2.1 Set Environment Variables (Optional)
@@ -811,9 +713,15 @@ The `airflow-init` service will:
 - **Password**: `airflow`
 - **Purpose**: Monitor DAG runs, trigger pipelines, view logs
 
+![Airflow UI](imgs/airflow/airflow.png)
+*Apache Airflow UI showing DAGs and pipeline monitoring interface*
+
 #### MLflow UI
 - **URL**: http://localhost:8002
 - **Purpose**: View experiments, compare models, manage model registry
+
+![MLflow UI](imgs/mlflow-training/mlflow.png)
+*MLflow UI showing experiments, model tracking, and model registry*
 
 #### MinIO Console
 - **URL**: http://localhost:9001
@@ -906,6 +814,47 @@ dag_07_publish_to_production
 2. Navigate to "Experiments" → `diabetes_readmission_prediction`
 3. Compare runs by metrics (F1 score, accuracy, etc.)
 4. View model parameters and artifacts
+
+![MLflow Experiments](imgs/mlflow-training/mlflow.png)
+*MLflow UI showing experiment tracking, model comparisons, and performance metrics*
+
+#### Training Metrics Visualization
+
+The following visualizations show the training and validation metrics across all 28 models (7 cumulative datasets × 4 algorithms):
+
+**Training Metrics:**
+
+**Training Accuracy:**
+![Training Accuracy](imgs/mlflow-training/train_accuracy.png)
+
+**Training F1 Score:**
+![Training F1 Score](imgs/mlflow-training/train_f1_score.png)
+
+**Training Precision:**
+![Training Precision](imgs/mlflow-training/train_precision.png)
+
+**Training Recall:**
+![Training Recall](imgs/mlflow-training/train_recall.png)
+
+**Validation Metrics:**
+
+**Validation Accuracy:**
+![Validation Accuracy](imgs/mlflow-training/val_accuracy.png)
+
+**Validation F1 Score:**
+![Validation F1 Score](imgs/mlflow-training/val_f1_score.png)
+
+**Validation Precision:**
+![Validation Precision](imgs/mlflow-training/val_precision.png)
+
+**Validation Recall:**
+![Validation Recall](imgs/mlflow-training/val_recall.png)
+
+These visualizations help identify:
+- Optimal training data size (which cumulative dataset performs best)
+- Best performing algorithm for this dataset
+- Performance scaling with increasing data volume
+- Trade-offs between different metrics
 
 #### MLflow Model Registry
 1. Navigate to "Models" in MLflow UI
@@ -1205,7 +1154,14 @@ print(f"Prediction: {result['readmission_prediction']}")
 print(f"Probabilities: {result['probabilities']}")
 ```
 
-#### 8.5 API Endpoints Summary
+#### 8.5 API Documentation (Swagger UI)
+
+Access the interactive API documentation at `http://<minikube-ip>:30080/docs`:
+
+![API Swagger Documentation](imgs/api/api_swagger.png)
+*FastAPI Swagger UI showing interactive API documentation and endpoint testing interface*
+
+#### 8.6 API Endpoints Summary
 
 **Base URL**: `http://<minikube-ip>:30080`
 
@@ -1257,6 +1213,9 @@ print(f"Probabilities: {result['probabilities']}")
    - Prediction results with probability distributions
    - Model performance metrics
 
+![Web UI](imgs/ui/ui.png)
+*Streamlit Web UI showing model information, patient data entry form, and prediction results*
+
 #### 9.2 Making Predictions via UI
 1. Fill in the patient information form
 2. Click "Predict Readmission"
@@ -1296,6 +1255,31 @@ print(f"Probabilities: {result['probabilities']}")
 - **Resource Usage**: CPU and memory usage per pod
 - **Scaling Events**: HPA scaling up/down events
 
+#### 10.4 Grafana Dashboard Screenshots
+
+**Overview Dashboard - During Active Load Testing:**
+![Overview Dashboard - Active Load](imgs/observability/overview_last5minutes_locustActive.png)
+*Dashboard showing API performance metrics during active load testing with Locust*
+
+**Overview Dashboard - After Load Test Stopped:**
+![Overview Dashboard - Load Stopped](imgs/observability/overview_last15minutes_locustStopped.png)
+*Dashboard showing API performance metrics after load test stopped*
+
+**Predictions Dashboard - During Active Load Testing:**
+![Predictions Dashboard - Active Load](imgs/observability/predictions_last5minutes_locustActive.png)
+*Dashboard showing prediction distribution and class metrics during active load testing*
+
+**Predictions Dashboard - After Load Test Stopped:**
+![Predictions Dashboard - Load Stopped](imgs/observability/predictions_last15minutes_locustStopped.png)
+*Dashboard showing prediction distribution and class metrics after load test stopped*
+
+These dashboards provide real-time insights into:
+- API performance under load
+- Request rates and latency patterns
+- Prediction class distribution
+- System resource utilization
+- Error rates and failure patterns
+
 ### Step 11: Load Testing with Locust
 
 #### 11.1 Access Locust UI
@@ -1327,11 +1311,41 @@ print(f"Probabilities: {result['probabilities']}")
 - **Heavy Load**: 100 users, 10 spawn rate
 - **Stress Test**: 200+ users, 20 spawn rate
 
-#### 11.4 Analyze Results
+#### 11.4 Load Testing Results
+
+**Stable Performance at 8,500 Users:**
+![8500 Users Stable](imgs/locust/8500users_stable.png)
+*Locust load test results showing stable performance at 8,500 concurrent users*
+
+The system demonstrates stable performance with:
+- Consistent response times
+- Low error rates
+- Successful request handling
+- Proper HPA scaling behavior
+
+**System Crash at 9,000 Users:**
+![9000 Users Crashed](imgs/locust/9000users_crashed.png)
+*Locust load test results showing system crash at 9,000 concurrent users*
+
+At 9,000 concurrent users, the system reaches its breaking point:
+- Increased error rates
+- Response time degradation
+- System instability
+- Resource exhaustion
+
+**Key Findings:**
+- **Maximum Stable Load**: ~8,500 concurrent users
+- **Breaking Point**: ~9,000 concurrent users
+- **Optimal Configuration**: 3-10 replicas with HPA enabled
+- **Resource Limits**: CPU and memory thresholds are critical for stability
+
+#### 11.5 Analyze Results
 - Check Prometheus metrics during load test
 - Verify HPA scales appropriately
 - Monitor API pod resource usage
 - Check for errors in API logs
+- Compare performance at different load levels
+- Identify system bottlenecks and capacity limits
 
 ### Step 12: Undeploy Services
 
@@ -1348,498 +1362,5 @@ cd k8s/scripts
 ./undeploy.sh --monitoring    # Undeploy Monitoring only
 ./undeploy.sh --locust        # Undeploy Locust only
 ```
-
----
-
-## Retrieving Trained Models
-
-### Python Script to Load Models from MLflow
-
-```python
-import mlflow
-from mlflow.tracking import MlflowClient
-import pandas as pd
-from sklearn.preprocessing import LabelEncoder, StandardScaler
-
-# Configure MLflow tracking URI
-mlflow.set_tracking_uri("http://localhost:8002")
-
-# Initialize MLflow client
-client = MlflowClient()
-
-# ============================================
-# Method 1: Load Production Model from Registry
-# ============================================
-
-def load_production_model():
-    """
-    Load the current production model from MLflow Model Registry
-    """
-    model_name = "diabetes_readmission_model"
-
-    # Get production model
-    model_uri = f"models:/{model_name}/Production"
-    model = mlflow.sklearn.load_model(model_uri)
-
-    print(f"Loaded production model: {model_name}")
-    print(f"Model type: {type(model).__name__}")
-
-    return model
-
-# ============================================
-# Method 2: Load Specific Model by Run ID
-# ============================================
-
-def load_model_by_run_id(run_id):
-    """
-    Load a model from a specific MLflow run
-
-    Args:
-        run_id (str): MLflow run ID
-    """
-    model_uri = f"runs:/{run_id}/model"
-    model = mlflow.sklearn.load_model(model_uri)
-
-    # Get run information
-    run = client.get_run(run_id)
-    metrics = run.data.metrics
-    params = run.data.params
-
-    print(f"Loaded model from run: {run_id}")
-    print(f"Model type: {params.get('model_type', 'Unknown')}")
-    print(f"Training F1 Score: {metrics.get('train_f1_score', 'N/A')}")
-    print(f"Validation F1 Score: {metrics.get('val_f1_score', 'N/A')}")
-
-    return model, metrics, params
-
-# ============================================
-# Method 3: Get Best Model from Experiment
-# ============================================
-
-def get_best_model_from_experiment(experiment_name="diabetes_readmission_prediction"):
-    """
-    Find and load the best performing model from an experiment
-
-    Args:
-        experiment_name (str): Name of the MLflow experiment
-    """
-    # Get experiment
-    experiment = client.get_experiment_by_name(experiment_name)
-    if experiment is None:
-        print(f"Experiment '{experiment_name}' not found!")
-        return None
-
-    # Search for runs sorted by validation F1 score
-    runs = client.search_runs(
-        experiment_ids=[experiment.experiment_id],
-        order_by=["metrics.val_f1_score DESC"],
-        max_results=1
-    )
-
-    if not runs:
-        print("No runs found in experiment!")
-        return None
-
-    best_run = runs[0]
-    run_id = best_run.info.run_id
-
-    print(f"Best model found:")
-    print(f"  Run ID: {run_id}")
-    print(f"  Model: {best_run.data.params.get('model_type')}")
-    print(f"  Val F1 Score: {best_run.data.metrics.get('val_f1_score')}")
-    print(f"  Val Accuracy: {best_run.data.metrics.get('val_accuracy')}")
-
-    # Load the model
-    model_uri = f"runs:/{run_id}/model"
-    model = mlflow.sklearn.load_model(model_uri)
-
-    return model, best_run
-
-# ============================================
-# Method 4: List All Available Models
-# ============================================
-
-def list_all_trained_models(experiment_name="diabetes_readmission_prediction"):
-    """
-    List all models in an experiment with their metrics
-    """
-    # Get experiment
-    experiment = client.get_experiment_by_name(experiment_name)
-    if experiment is None:
-        print(f"Experiment '{experiment_name}' not found!")
-        return
-
-    # Get all runs
-    runs = client.search_runs(
-        experiment_ids=[experiment.experiment_id],
-        order_by=["metrics.val_f1_score DESC"]
-    )
-
-    print(f"\nFound {len(runs)} models in experiment '{experiment_name}':\n")
-
-    results = []
-    for run in runs:
-        model_info = {
-            'run_id': run.info.run_id,
-            'model_type': run.data.params.get('model_type', 'Unknown'),
-            'train_f1': run.data.metrics.get('train_f1_score', 0),
-            'val_f1': run.data.metrics.get('val_f1_score', 0),
-            'val_accuracy': run.data.metrics.get('val_accuracy', 0),
-            'n_features': run.data.params.get('n_features', 'N/A'),
-            'n_samples': run.data.params.get('n_samples', 'N/A')
-        }
-        results.append(model_info)
-
-    # Create DataFrame for better visualization
-    df = pd.DataFrame(results)
-    print(df.to_string(index=False))
-
-    return df
-
-# ============================================
-# Method 5: Make Predictions with Loaded Model
-# ============================================
-
-def predict_with_model(model, data):
-    """
-    Make predictions using a loaded model
-
-    Args:
-        model: Loaded scikit-learn model
-        data: pandas DataFrame with features
-
-    Returns:
-        predictions: numpy array of predictions
-        probabilities: numpy array of prediction probabilities
-    """
-    # Make predictions
-    predictions = model.predict(data)
-
-    # Get prediction probabilities (if available)
-    if hasattr(model, 'predict_proba'):
-        probabilities = model.predict_proba(data)
-    else:
-        probabilities = None
-
-    return predictions, probabilities
-
-# ============================================
-# Example Usage
-# ============================================
-
-if __name__ == "__main__":
-    print("=" * 60)
-    print("MLflow Model Recovery Examples")
-    print("=" * 60)
-
-    # Example 1: Load production model
-    print("\n1. Loading Production Model:")
-    print("-" * 60)
-    try:
-        prod_model = load_production_model()
-    except Exception as e:
-        print(f"Error loading production model: {e}")
-
-    # Example 2: List all models
-    print("\n2. Listing All Trained Models:")
-    print("-" * 60)
-    models_df = list_all_trained_models()
-
-    # Example 3: Get best model
-    print("\n3. Loading Best Model from Experiment:")
-    print("-" * 60)
-    best_model, best_run = get_best_model_from_experiment()
-
-    # Example 4: Load specific model by run ID
-    print("\n4. Loading Specific Model by Run ID:")
-    print("-" * 60)
-    if models_df is not None and len(models_df) > 0:
-        sample_run_id = models_df.iloc[0]['run_id']
-        model, metrics, params = load_model_by_run_id(sample_run_id)
-
-    # Example 5: Get registered model versions
-    print("\n5. Model Registry Versions:")
-    print("-" * 60)
-    try:
-        model_name = "diabetes_readmission_model"
-        versions = client.search_model_versions(f"name='{model_name}'")
-
-        for version in versions:
-            print(f"\nVersion: {version.version}")
-            print(f"  Stage: {version.current_stage}")
-            print(f"  Run ID: {version.run_id}")
-            print(f"  Status: {version.status}")
-    except Exception as e:
-        print(f"Error fetching model versions: {e}")
-
-    print("\n" + "=" * 60)
-    print("Recovery Complete!")
-    print("=" * 60)
-```
-
-### Save the Script
-
-Save the above script as `retrieve_models.py` and run:
-
-```bash
-# Ensure MLflow server is running
-python retrieve_models.py
-```
-
-### Expected Output
-
-```
-============================================================
-MLflow Model Recovery Examples
-============================================================
-
-1. Loading Production Model:
-------------------------------------------------------------
-Loaded production model: diabetes_readmission_model
-Model type: GradientBoostingClassifier
-
-2. Listing All Trained Models:
-------------------------------------------------------------
-Found 4 models in experiment 'diabetes_readmission_prediction':
-
-                     run_id          model_type  train_f1  val_f1  val_accuracy  n_features  n_samples
-abc123...  GradientBoostingClassifier    0.6234  0.6189        0.6234          45      71237
-def456...        RandomForestClassifier    0.6198  0.6156        0.6198          45      71237
-ghi789...          DecisionTreeClassifier    0.5987  0.5923        0.5987          45      71237
-jkl012...    LogisticRegressionClassifier    0.5856  0.5801        0.5856          45      71237
-
-3. Loading Best Model from Experiment:
-------------------------------------------------------------
-Best model found:
-  Run ID: abc123...
-  Model: GradientBoostingClassifier
-  Val F1 Score: 0.6189
-  Val Accuracy: 0.6234
-```
-
----
-
-## Video Explanation
-
-> **TODO**: Add link to video explanation here
-
-### Suggested Video Structure
-
-1. **Introduction** (0:00-1:00)
-   - Project overview and objectives
-   - MLOps platform components
-
-2. **Architecture Walkthrough** (1:00-3:00)
-   - Docker Compose services
-   - Kubernetes deployment
-   - Network connectivity
-
-3. **Starting the Platform** (3:00-6:00)
-   - Minikube setup
-   - Docker Compose startup
-   - Accessing web interfaces
-
-4. **Running the Pipeline** (6:00-10:00)
-   - Triggering Airflow DAGs
-   - Monitoring execution
-   - Viewing logs
-
-5. **Model Training & Tracking** (10:00-13:00)
-   - MLflow experiments
-   - Model comparison
-   - Model registry
-
-6. **Results & Deployment** (13:00-15:00)
-   - Best model selection
-   - Production deployment
-   - Model retrieval
-
-7. **Conclusion** (15:00-16:00)
-   - Key takeaways
-   - Future improvements
-
----
-
-## Contributing
-
-We welcome contributions to improve this MLOps platform! Here's how you can contribute:
-
-### Reporting Issues
-
-1. **Check Existing Issues**: Search [GitHub Issues](../../issues) to avoid duplicates
-2. **Create New Issue**: Provide detailed information:
-   - Environment (OS, Docker version, Minikube version)
-   - Steps to reproduce
-   - Expected vs actual behavior
-   - Error messages and logs
-
-### Suggesting Enhancements
-
-1. Open an issue with the label `enhancement`
-2. Describe the proposed feature and its benefits
-3. Provide use cases and examples
-
-### Pull Request Process
-
-1. **Fork the Repository**
-   ```bash
-   git clone https://github.com/yourusername/MLOps-Grupo2.git
-   cd MLOps-Grupo2/Proyectos/Proyecto_grupo_2_Parte_2
-   ```
-
-2. **Create a Feature Branch**
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-3. **Make Changes**
-   - Follow existing code style
-   - Add comments for complex logic
-   - Update documentation if needed
-
-4. **Test Your Changes**
-   ```bash
-   # Test locally with Docker Compose
-   docker compose -f docker-compose.inference.yml up --build
-
-   # Run pipeline to verify functionality
-   ```
-
-5. **Commit Changes**
-   ```bash
-   git add .
-   git commit -m "Add feature: your feature description"
-   ```
-
-6. **Push to GitHub**
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-
-7. **Create Pull Request**
-   - Go to GitHub repository
-   - Click "New Pull Request"
-   - Describe changes and link related issues
-   - Request review from maintainers
-
-### Development Guidelines
-
-#### Code Style
-- **Python**: Follow PEP 8 style guide
-- **DAGs**: Use descriptive task IDs and clear documentation
-- **Docker**: Optimize layer caching and minimize image size
-
-#### Testing
-- Test all DAGs individually before integration
-- Verify database connections and queries
-- Ensure MLflow logging works correctly
-- Test with different data volumes
-
-#### Documentation
-- Update README for new features
-- Add docstrings to Python functions
-- Comment complex SQL queries
-- Update architecture diagrams if structure changes
-
-### Areas for Contribution
-
-We especially welcome contributions in these areas:
-
-1. **API Enhancements**
-   - Add authentication and authorization (JWT, OAuth2)
-   - Implement rate limiting
-   - Add batch prediction endpoint
-   - Add model versioning and A/B testing support
-   - Implement request/response caching
-
-2. **Frontend Development**
-   - Enhance UI with more visualizations
-   - Add model comparison dashboard
-   - Create pipeline monitoring dashboard
-   - Add data exploration features
-   - Implement user authentication
-
-3. **Testing & Quality**
-   - Add unit tests for data processing
-   - Create integration tests for pipelines
-   - Add API integration tests
-   - Implement end-to-end tests
-   - Add performance benchmarks
-
-4. **Observability**
-   - Add distributed tracing (Jaeger, Zipkin)
-   - Create more Grafana dashboards
-   - Implement alerting rules
-   - Add log aggregation (ELK stack)
-   - Implement SLA/SLO monitoring
-
-5. **Model Improvements**
-   - Add hyperparameter tuning (GridSearch, Optuna, Hyperopt)
-   - Implement cross-validation
-   - Add more algorithms (XGBoost, LightGBM, Neural Networks)
-   - Implement model explainability (SHAP, LIME)
-   - Add model drift detection
-
-6. **Infrastructure**
-   - Add CI/CD pipelines (GitHub Actions, GitLab CI)
-   - Implement blue-green deployments
-   - Add canary deployments
-   - Implement service mesh (Istio, Linkerd)
-   - Add multi-cloud support
-
-7. **Documentation**
-   - Add more detailed setup guides
-   - Create troubleshooting section
-   - Add architecture decision records (ADRs)
-   - Create video tutorials
-   - Add API documentation examples
-
-### Code of Conduct
-
-- Be respectful and inclusive
-- Provide constructive feedback
-- Focus on collaboration and learning
-- Help others in discussions
-
-### Contact
-
-For questions or discussions, please:
-- Open an issue on GitHub
-- Contact project maintainers
-- Join project discussions
-
----
-
-## License
-
-This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
-
----
-
-## Acknowledgments
-
-- **Apache Airflow** - Workflow orchestration platform
-- **MLflow** - ML lifecycle management and model registry
-- **FastAPI** - High-performance API framework
-- **Streamlit** - Interactive web application framework
-- **scikit-learn** - Machine learning algorithms
-- **MinIO** - S3-compatible object storage
-- **PostgreSQL** - Relational database
-- **Redis** - In-memory data store and message broker
-- **Prometheus** - Metrics collection and monitoring
-- **Grafana** - Metrics visualization and dashboards
-- **Locust** - Load testing framework
-- **Docker** & **Kubernetes** - Containerization and orchestration
-- **Minikube** - Local Kubernetes cluster
-
----
-
-## Project Status
-
-**Current Version**: 1.0.0
-
-**Status**: Active Development
-
-**Last Updated**: 2025
 
 ---
