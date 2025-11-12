@@ -5,10 +5,21 @@ metadata:
   labels:
     app: diabetes-api
     component: inference
+  annotations:
+    # Load balancer optimization annotations (cloud provider specific)
+    service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "60"
+    # For Minikube, these are informational but won't affect behavior
 spec:
   type: LoadBalancer
   selector:
     app: diabetes-api
+  # sessionAffinity: None  # Stateless API - no session affinity for even load distribution
+  # Note: For stateless APIs, session affinity is not recommended as it can cause uneven load
+  # If you need session affinity for caching, uncomment the lines below:
+  # sessionAffinity: ClientIP
+  # sessionAffinityConfig:
+  #   clientIP:
+  #     timeoutSeconds: 10800
   ports:
   - port: 8000
     targetPort: 8000

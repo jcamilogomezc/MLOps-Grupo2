@@ -13,8 +13,9 @@ spec:
     - protocol: TCP
       port: 5432
       targetPort: 5432
+      nodePort: 31103
   selector:
     io.kompose.service: postgres-clean-data
-  type: LoadBalancer
+  type: NodePort
 status:
   loadBalancer: {}

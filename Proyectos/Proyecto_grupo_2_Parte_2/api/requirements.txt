@@ -21,3 +21,6 @@ requests==2.32.3
 # Optional: for better JSON serialization
 python-multipart==0.0.9
 
+# Prometheus metrics
+prometheus-client==0.21.0
+
