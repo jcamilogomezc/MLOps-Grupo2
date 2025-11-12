@@ -74,8 +74,8 @@ x-airflow-common:
     # The following line can be used to set a custom config file, stored in the local config folder
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
     # Database connection strings for raw and clean data (via Minikube NodePort)
-    AIRFLOW_CONN_RAW_DATA: postgresql+psycopg2://rawdata_user:rawdata_password@192.168.58.2:31070/raw_data_db
-    AIRFLOW_CONN_CLEAN_DATA: postgresql+psycopg2://cleandata_user:cleandata_password@192.168.58.2:30236/clean_data_db
+    AIRFLOW_CONN_RAW_DATA: postgresql+psycopg2://rawdata_user:rawdata_password@192.168.49.2:30799/raw_data_db
+    AIRFLOW_CONN_CLEAN_DATA: postgresql+psycopg2://cleandata_user:cleandata_password@192.168.49.2:31103/clean_data_db
   volumes:
     - ${AIRFLOW_PROJ_DIR:-./airflow}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-./airflow}/logs:/opt/airflow/logs

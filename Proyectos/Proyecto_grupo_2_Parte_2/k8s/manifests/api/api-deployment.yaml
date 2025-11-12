@@ -6,7 +6,7 @@ metadata:
     app: diabetes-api
     component: inference
 spec:
-  replicas: 1
+  replicas: 3  # Increased from 1 to 3 for better availability and load distribution
   selector:
     matchLabels:
       app: diabetes-api
@@ -15,6 +15,10 @@ spec:
       labels:
         app: diabetes-api
         component: inference
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: api
@@ -45,13 +49,18 @@ spec:
           value: "http://host.minikube.internal:9000"  # Change to host IP if needed
         - name: MLFLOW_S3_IGNORE_TLS
           value: "true"
+        # Performance optimization: Set Python to use multiple threads
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: UVICORN_WORKERS
+          value: "2"  # Number of worker processes per pod
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "250m"
+            memory: "1Gi"  # Increased from 512Mi
+            cpu: "500m"    # Increased from 250m
           limits:
-            memory: "1Gi"
-            cpu: "500m"
+            memory: "2Gi"  # Increased from 1Gi for model loading and processing
+            cpu: "2000m"   # Increased from 500m to allow multiple workers
         livenessProbe:
           httpGet:
             path: /health
@@ -68,5 +77,6 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 3
+          successThreshold: 1
       restartPolicy: Always
 

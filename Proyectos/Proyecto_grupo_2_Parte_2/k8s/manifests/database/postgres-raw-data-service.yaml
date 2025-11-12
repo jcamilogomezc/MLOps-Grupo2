@@ -13,8 +13,9 @@ spec:
     - protocol: TCP
       port: 5432
       targetPort: 5432
+      nodePort: 30799
   selector:
     io.kompose.service: postgres-raw-data
-  type: LoadBalancer
+  type: NodePort
 status:
   loadBalancer: {}

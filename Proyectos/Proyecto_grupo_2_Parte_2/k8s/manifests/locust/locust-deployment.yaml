@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locust
+  labels:
+    app: locust
+    component: load-testing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: locust
+  template:
+    metadata:
+      labels:
+        app: locust
+        component: load-testing
+    spec:
+      containers:
+      - name: locust
+        image: locust:latest
+        imagePullPolicy: Never  # Use local image in Minikube
+        ports:
+        - containerPort: 8089
+          name: web
+          protocol: TCP
+        env:
+        # Target API service name (Kubernetes DNS)
+        - name: LOCUST_HOST
+          value: "http://diabetes-api:8000"
+        # Locust configuration
+        - name: LOCUST_WEB_HOST
+          value: "0.0.0.0"
+        - name: LOCUST_WEB_PORT
+          value: "8089"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8089
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8089
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      restartPolicy: Always
+

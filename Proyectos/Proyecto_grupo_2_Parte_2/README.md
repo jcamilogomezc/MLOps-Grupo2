@@ -5,10 +5,16 @@ A production-ready MLOps platform for predicting diabetes patient hospital readm
 ## Table of Contents
 
 - [Project Description](#project-description)
+- [Quick Start Guide](#quick-start-guide)
 - [Requirements](#requirements)
 - [Architecture](#architecture)
 - [Step-by-Step Workflow](#step-by-step-workflow)
 - [How to Run the Project](#how-to-run-the-project)
+- [Deploy Inference Services](#step-7-deploy-inference-services-api-ui-monitoring)
+- [Using the Inference API](#step-8-using-the-inference-api)
+- [Using the Web UI](#step-9-using-the-web-ui)
+- [Monitoring with Prometheus & Grafana](#step-10-monitoring-with-prometheus--grafana)
+- [Load Testing with Locust](#step-11-load-testing-with-locust)
 - [Retrieving Trained Models](#retrieving-trained-models)
 - [Video Explanation](#video-explanation)
 - [Contributing](#contributing)
@@ -17,8 +23,11 @@ A production-ready MLOps platform for predicting diabetes patient hospital readm
 
 ## Project Description
 
-This MLOps platform automates the complete lifecycle of a diabetes patient readmission prediction model using an innovative **Cumulative Batch Training** approach. The system handles:
+This MLOps platform automates the complete lifecycle of a diabetes patient readmission prediction model using an innovative **Cumulative Batch Training** approach. The system provides end-to-end ML workflow automation from data ingestion to production deployment, including model serving, monitoring, and load testing capabilities.
 
+### Core Features
+
+**Training Pipeline**:
 - **Automated Data Pipeline**: Download, split into batches, and store diabetes hospital readmission dataset (~101,767 records with 50+ features)
 - **Dynamic Batch Processing**: Automatically divides training data into batches of 15,000 records and creates cumulative views
 - **Cumulative Model Training**: Trains 4 classification algorithms (Logistic Regression, Decision Tree, Random Forest, Gradient Boosting) on **7 progressively larger datasets** (15K → 102K records) to identify optimal training data size
@@ -26,12 +35,91 @@ This MLOps platform automates the complete lifecycle of a diabetes patient readm
 - **Experiment Tracking**: Uses MLflow to track all experiments, parameters, metrics, and model artifacts with full lineage
 - **Intelligent Model Selection**: Automatically selects the best performing model across all 28 trained models based on validation F1 score
 - **Model Registry**: Publishes production-ready models to MLflow Model Registry with version control
-- **Hybrid Infrastructure**: Combines Docker Compose (orchestration & ML services) with Kubernetes (database services) via Minikube network bridge
-- **Performance Analysis**: Provides insights into optimal training data size and performance scaling patterns
+
+**Inference & Serving**:
+- **REST API**: FastAPI-based inference service with async support and thread pool execution
+- **Model Serving**: Loads production models from MLflow Model Registry with automatic preprocessing
+- **Health Checks**: Built-in health and readiness probes for Kubernetes deployment
+- **Metrics Export**: Prometheus metrics for request latency, throughput, and error rates
+- **Horizontal Scaling**: Kubernetes HPA (Horizontal Pod Autoscaler) for automatic scaling based on CPU/memory usage
+
+**User Interface**:
+- **Web UI**: Streamlit-based interface for interactive predictions
+- **Model Information**: Display model metadata, version, and performance metrics
+- **Interactive Forms**: User-friendly forms for entering patient data
+- **Prediction Results**: Visual display of predictions with probability distributions
+
+**Monitoring & Observability**:
+- **Prometheus**: Metrics collection and storage
+- **Grafana**: Visualization dashboards for API performance and model metrics
+- **Custom Metrics**: Request count, latency, prediction classes, error rates
+- **Service Discovery**: Automatic scraping of API metrics endpoints
+
+**Load Testing**:
+- **Locust**: Distributed load testing framework
+- **Realistic Scenarios**: Simulates user behavior with patient data
+- **Performance Metrics**: Measures throughput, response times, and error rates
+- **Scalability Testing**: Validates HPA behavior under load
+
+**Infrastructure**:
+- **Hybrid Deployment**: Combines Docker Compose (orchestration & ML services) with Kubernetes (inference services) via Minikube network bridge
+- **High Availability**: Multi-replica deployments with load balancing
+- **Auto-scaling**: HPA with configurable CPU and memory thresholds
+- **Resource Management**: Resource requests and limits for optimal performance
 
 **Key Innovation**: The cumulative batch training strategy answers the critical question: "How much data do we need for optimal performance?" by systematically training models on increasing data volumes (15K, 30K, 45K, 60K, 75K, 90K, 102K records) and comparing results.
 
-**Key Technologies**: Apache Airflow 3.1.0, MLflow 3.4.0, PostgreSQL 16, Redis 7.2, MinIO S3, Docker, Kubernetes (Minikube), scikit-learn 1.4.2, Python 3.10
+**Key Technologies**: Apache Airflow 3.1.0, MLflow 3.4.0, FastAPI, Streamlit, PostgreSQL 16, Redis 7.2, MinIO S3, Docker, Kubernetes (Minikube), Prometheus, Grafana, Locust, scikit-learn 1.4.2, Python 3.10
+
+---
+
+## Quick Start Guide
+
+### Prerequisites
+- Docker & Docker Compose installed
+- Minikube installed and running
+- kubectl installed
+- 8GB+ RAM available
+
+### Quick Start (5 Minutes)
+
+1. **Start Minikube**:
+   ```bash
+   minikube start --driver=docker
+   minikube addons enable metrics-server
+   ```
+
+2. **Deploy Databases**:
+   ```bash
+   cd k8s/komposedbfiles
+   kubectl apply -f postgres-raw-data-deployment.yaml
+   kubectl apply -f postgres-raw-data-service.yaml
+   ```
+
+3. **Start ML Services**:
+   ```bash
+   docker compose -f docker-compose.inference.yml up -d
+   ```
+
+4. **Train Model** (via Airflow UI at http://localhost:8001):
+   - Enable `dag_00b_master_cumulative_pipeline`
+   - Trigger the DAG
+   - Wait for training to complete (~1-2 hours)
+
+5. **Deploy Inference Services**:
+   ```bash
+   cd k8s/scripts
+   ./deploy.sh
+   ```
+
+6. **Access Services**:
+   - **API**: `http://<minikube-ip>:30080`
+   - **UI**: `http://<minikube-ip>:30085`
+   - **Prometheus**: `http://<minikube-ip>:30090`
+   - **Grafana**: `http://<minikube-ip>:30300`
+   - **Locust**: `http://<minikube-ip>:30189`
+
+For detailed instructions, see [How to Run the Project](#how-to-run-the-project).
 
 ---
 
@@ -66,12 +154,22 @@ See [airflow/requirements.txt](airflow/requirements.txt) and [mlflow/requirement
 
 #### Docker Images Used
 
+**Training & Orchestration**:
 - `apache/airflow:3.1.0` (custom build with ML dependencies)
-- `postgres:16`
-- `redis:7.2-bookworm`
+- `postgres:16` (Airflow metadata, MLflow metadata, data storage)
+- `redis:7.2-bookworm` (Airflow Celery broker)
 - `python:3.10-slim` (MLflow server)
-- `quay.io/minio/minio:latest`
+- `quay.io/minio/minio:latest` (S3-compatible object storage)
 - `minio/mc` (MinIO client)
+
+**Inference & Serving**:
+- `diabetes-api:latest` (FastAPI inference service - custom build)
+- `streamlit:latest` (Web UI - custom build)
+- `prom/prometheus:latest` (Metrics collection)
+- `grafana/grafana:latest` (Metrics visualization)
+- `locustio/locust:latest` (Load testing)
+
+See [api/Dockerfile](api/Dockerfile), [ui/Dockerfile](ui/Dockerfile), [locust/Dockerfile](locust/Dockerfile) for custom image builds.
 
 ---
 
@@ -237,6 +335,100 @@ flowchart TD
     style MLflow fill:#e91e63,color:#fff,stroke:#880e4f,stroke-width:2px
 ```
 
+### Inference & Serving Architecture
+
+This diagram shows the complete inference infrastructure with API, UI, monitoring, and load testing components.
+
+```mermaid
+graph TB
+    subgraph "Kubernetes - Minikube Cluster"
+        subgraph "Inference Services"
+            API1["fa:fa-server API Pod 1<br/>FastAPI<br/>:8000"]
+            API2["fa:fa-server API Pod 2<br/>FastAPI<br/>:8000"]
+            API3["fa:fa-server API Pod 3<br/>FastAPI<br/>:8000"]
+            API_SVC["fa:fa-network-wired API Service<br/>NodePort:30080<br/>LoadBalancer"]
+            HPA["fa:fa-chart-line HPA<br/>Auto-scaling<br/>3-10 replicas"]
+        end
+        
+        subgraph "User Interface"
+            UI["fa:fa-browser UI Pod<br/>Streamlit<br/>:8501"]
+            UI_SVC["fa:fa-network-wired UI Service<br/>NodePort:30085"]
+        end
+        
+        subgraph "Monitoring Stack"
+            PROM["fa:fa-chart-bar Prometheus<br/>:9090<br/>Metrics Collection"]
+            GRAF["fa:fa-chart-area Grafana<br/>:3000<br/>Dashboards"]
+            PROM_SVC["fa:fa-network-wired Prometheus Service<br/>NodePort:30090"]
+            GRAF_SVC["fa:fa-network-wired Grafana Service<br/>NodePort:30300"]
+        end
+        
+        subgraph "Load Testing"
+            LOCUST["fa:fa-bug Locust<br/>:8089<br/>Load Testing"]
+            LOCUST_SVC["fa:fa-network-wired Locust Service<br/>NodePort:30189"]
+        end
+    end
+    
+    subgraph "Docker Compose - ML Services"
+        MLFLOW["fa:fa-chart-line MLflow<br/>:8002<br/>Model Registry"]
+        MINIO["fa:fa-cubes MinIO<br/>:9000<br/>Artifact Store"]
+    end
+    
+    subgraph "External Users"
+        USER["fa:fa-user End Users"]
+        TESTER["fa:fa-user Load Tester"]
+    end
+    
+    %% User interactions
+    USER -->|HTTP Requests| UI_SVC
+    USER -->|API Calls| API_SVC
+    TESTER -->|Load Test| LOCUST_SVC
+    
+    %% Service routing
+    UI_SVC --> UI
+    API_SVC --> API1
+    API_SVC --> API2
+    API_SVC --> API3
+    LOCUST_SVC --> LOCUST
+    PROM_SVC --> PROM
+    GRAF_SVC --> GRAF
+    
+    %% API scaling
+    HPA --> API1
+    HPA --> API2
+    HPA --> API3
+    
+    %% API to MLflow
+    API1 -->|Load Model| MLFLOW
+    API2 -->|Load Model| MLFLOW
+    API3 -->|Load Model| MLFLOW
+    MLFLOW --> MINIO
+    
+    %% Monitoring
+    PROM -->|Scrape Metrics| API1
+    PROM -->|Scrape Metrics| API2
+    PROM -->|Scrape Metrics| API3
+    GRAF -->|Query Metrics| PROM
+    
+    %% Load testing
+    LOCUST -->|Generate Load| API_SVC
+    
+    %% Styling
+    style API1 fill:#90caf9,stroke:#1565c0,stroke-width:2px
+    style API2 fill:#90caf9,stroke:#1565c0,stroke-width:2px
+    style API3 fill:#90caf9,stroke:#1565c0,stroke-width:2px
+    style API_SVC fill:#64b5f6,stroke:#0d47a1,stroke-width:3px
+    style HPA fill:#81c784,stroke:#2e7d32,stroke-width:2px
+    style UI fill:#ffccbc,stroke:#d84315,stroke-width:2px
+    style UI_SVC fill:#ffab91,stroke:#bf360c,stroke-width:2px
+    style PROM fill:#f48fb1,stroke:#880e4f,stroke-width:2px
+    style GRAF fill:#ce93d8,stroke:#6a1b9a,stroke-width:2px
+    style LOCUST fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    style MLFLOW fill:#ffccbc,stroke:#e64a19,stroke-width:3px
+    style MINIO fill:#ffe0b2,stroke:#f57c00,stroke-width:2px
+    style USER fill:#c5e1a5,stroke:#558b2f,stroke-width:2px
+    style TESTER fill:#c5e1a5,stroke:#558b2f,stroke-width:2px
+```
+
 ### Key Architecture Features
 
 **Dynamic Cumulative Training**
@@ -246,14 +438,28 @@ flowchart TD
 - Identifies optimal training data size for best performance
 
 **Hybrid Docker + Kubernetes**
-- Docker Compose: Airflow orchestration, MLflow tracking, Redis queue
-- Kubernetes (Minikube): PostgreSQL databases with LoadBalancer access
-- Minikube network bridge enables seamless communication
+- **Docker Compose**: Airflow orchestration, MLflow tracking, Redis queue, ML training services
+- **Kubernetes (Minikube)**: Inference API, UI, monitoring stack, load testing, databases
+- Minikube network bridge enables seamless communication between Docker and Kubernetes
+
+**Scalable Inference Infrastructure**
+- **High Availability**: Multiple API replicas (3-10 pods) with load balancing
+- **Auto-scaling**: HPA automatically scales API pods based on CPU/memory usage (70% CPU, 80% memory thresholds)
+- **Health Monitoring**: Liveness and readiness probes ensure service reliability
+- **Metrics Export**: Prometheus-compatible metrics endpoint on each API pod
+- **Service Discovery**: Automatic metrics scraping by Prometheus
 
 **Scalable Storage**
 - PostgreSQL: Raw batches, cumulative views, validation/test data
-- MinIO S3: Model artifacts, experiment files
+- MinIO S3: Model artifacts, experiment files, preprocessing pipelines
 - Multi-database architecture for separation of concerns
+- MLflow Model Registry: Production model versioning and staging
+
+**Monitoring & Observability**
+- **Prometheus**: Collects metrics from all API pods (request count, latency, errors)
+- **Grafana**: Visualizes metrics with customizable dashboards
+- **Custom Metrics**: Prediction classes, error types, in-progress requests
+- **Alerting Ready**: Prometheus alerting rules can be configured for SLO violations
 
 ---
 
@@ -707,6 +913,35 @@ dag_07_publish_to_production
 3. View production version and metadata
 4. Download model artifacts
 
+### Step 5.5: Jupyter Notebooks (Optional)
+
+For data exploration and analysis, Jupyter notebooks are available:
+
+#### 5.5.1 Start Jupyter Service
+```bash
+# Navigate to jupyter directory
+cd jupyter
+
+# Start Jupyter with Docker Compose
+docker compose -f docker-compose.jupyter.yml up -d
+
+# Access Jupyter Lab
+# URL: http://localhost:8888
+# Token: Check logs with: docker compose -f docker-compose.jupyter.yml logs
+```
+
+#### 5.5.2 Available Notebooks
+- Data exploration and analysis
+- Model evaluation and comparison
+- Feature importance analysis
+- Performance visualization
+
+#### 5.5.3 Stop Jupyter Service
+```bash
+cd jupyter
+docker compose -f docker-compose.jupyter.yml down
+```
+
 #### Database Verification
 ```bash
 # Connect to raw data database
@@ -750,6 +985,368 @@ minikube stop
 
 # Delete Minikube cluster (optional)
 minikube delete
+```
+
+### Step 7: Deploy Inference Services (API, UI, Monitoring)
+
+After training and registering a model in MLflow, deploy the inference infrastructure to Kubernetes.
+
+#### 7.1 Enable Metrics Server (Required for HPA)
+```bash
+# Enable metrics server in Minikube
+minikube addons enable metrics-server
+
+# Verify metrics server is running
+kubectl get deployment metrics-server -n kube-system
+```
+
+#### 7.2 Deploy All Services (Recommended)
+```bash
+# Navigate to scripts directory
+cd k8s/scripts
+
+# Deploy API, UI, Monitoring, and Locust
+./deploy.sh
+
+# Or deploy individual components:
+./deploy-api.sh      # Deploy API only
+./deploy-ui.sh       # Deploy UI only
+./deploy-monitoring.sh  # Deploy Prometheus & Grafana
+./deploy-locust.sh   # Deploy Locust load testing
+```
+
+#### 7.3 Verify Deployments
+```bash
+# Check all deployments
+kubectl get deployments
+
+# Check all services
+kubectl get services
+
+# Check API pods
+kubectl get pods -l app=diabetes-api
+
+# Check HPA status
+kubectl get hpa diabetes-api-hpa
+
+# View API logs
+kubectl logs -l app=diabetes-api -f
+```
+
+#### 7.4 Access Services
+
+**Get Minikube IP**:
+```bash
+minikube ip
+# Expected output: 192.168.49.2 (or similar)
+```
+
+**API Service**:
+- **NodePort**: `http://<minikube-ip>:30080`
+- **Health Check**: `http://<minikube-ip>:30080/health`
+- **API Docs**: `http://<minikube-ip>:30080/docs`
+- **Model Info**: `http://<minikube-ip>:30080/model-info`
+- **Metrics**: `http://<minikube-ip>:30080/metrics`
+
+**UI Service**:
+- **URL**: `http://<minikube-ip>:30085`
+
+**Prometheus**:
+- **URL**: `http://<minikube-ip>:30090`
+
+**Grafana**:
+- **URL**: `http://<minikube-ip>:30300`
+- **Default Credentials**: `admin:admin` (change on first login)
+
+**Locust**:
+- **URL**: `http://<minikube-ip>:30189`
+
+#### 7.5 Port Forwarding (Alternative Access)
+
+For easier access from your local machine, use port forwarding:
+
+```bash
+# Start port forwarding script
+cd k8s/scripts
+./start-port-forward.sh
+
+# This forwards:
+# - Port 8000 → API (30080)
+# - Port 8010 → UI (30085)
+# - Port 8011 → Prometheus (30090)
+# - Port 8012 → Grafana (30300)
+# - Port 8013 → Locust (30189)
+
+# Access services on localhost:
+# - API: http://localhost:8000
+# - UI: http://localhost:8010
+# - Prometheus: http://localhost:8011
+# - Grafana: http://localhost:8012
+# - Locust: http://localhost:8013
+```
+
+### Step 8: Using the Inference API
+
+#### 8.1 Health Check
+```bash
+curl http://<minikube-ip>:30080/health
+# Expected response: {"status":"ok","model":"diabetes_readmission_model"}
+```
+
+#### 8.2 Get Model Information
+```bash
+curl http://<minikube-ip>:30080/model-info
+```
+
+#### 8.3 Make Predictions
+
+**Single Prediction**:
+```bash
+curl -X POST "http://<minikube-ip>:30080/predict" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "features": {
+      "race": "Caucasian",
+      "gender": "Female",
+      "age": "[70-80)",
+      "weight": "?",
+      "admission_type_id": 1,
+      "discharge_disposition_id": 1,
+      "admission_source_id": 7,
+      "time_in_hospital": 1,
+      "payer_code": "?",
+      "medical_specialty": "Emergency/Trauma",
+      "num_lab_procedures": 41,
+      "num_procedures": 0,
+      "num_medications": 1,
+      "number_outpatient": 0,
+      "number_emergency": 0,
+      "number_inpatient": 0,
+      "diag_1": "250.83",
+      "diag_2": "?",
+      "diag_3": "?",
+      "number_diagnoses": 1,
+      "max_glu_serum": "None",
+      "A1Cresult": "None",
+      "metformin": "No",
+      "repaglinide": "No",
+      "nateglinide": "No",
+      "chlorpropamide": "No",
+      "glimepiride": "No",
+      "acetohexamide": "No",
+      "glipizide": "No",
+      "glyburide": "No",
+      "tolbutamide": "No",
+      "pioglitazone": "No",
+      "rosiglitazone": "No",
+      "acarbose": "No",
+      "miglitol": "No",
+      "troglitazone": "No",
+      "tolazamide": "No",
+      "examide": "No",
+      "citoglipton": "No",
+      "insulin": "No",
+      "glyburide-metformin": "No",
+      "glipizide-metformin": "No",
+      "glimepiride-pioglitazone": "No",
+      "metformin-rosiglitazone": "No",
+      "metformin-pioglitazone": "No",
+      "change": "No",
+      "diabetesMed": "No"
+    }
+  }'
+```
+
+**Expected Response**:
+```json
+{
+  "readmission_prediction": "NO",
+  "probabilities": {
+    "NO": 0.85,
+    "<30": 0.10,
+    ">30": 0.05
+  }
+}
+```
+
+#### 8.4 Python Client Example
+```python
+import requests
+import json
+
+API_URL = "http://<minikube-ip>:30080"
+
+# Health check
+response = requests.get(f"{API_URL}/health")
+print(response.json())
+
+# Get model info
+response = requests.get(f"{API_URL}/model-info")
+print(json.dumps(response.json(), indent=2))
+
+# Make prediction
+patient_data = {
+    "features": {
+        "race": "Caucasian",
+        "gender": "Female",
+        "age": "[70-80)",
+        "admission_type_id": 1,
+        "discharge_disposition_id": 1,
+        "time_in_hospital": 1,
+        "num_lab_procedures": 41,
+        "num_medications": 1,
+        # ... (add all required features)
+    }
+}
+
+response = requests.post(f"{API_URL}/predict", json=patient_data)
+result = response.json()
+print(f"Prediction: {result['readmission_prediction']}")
+print(f"Probabilities: {result['probabilities']}")
+```
+
+#### 8.5 API Endpoints Summary
+
+**Base URL**: `http://<minikube-ip>:30080`
+
+| Endpoint | Method | Description | Response |
+|----------|--------|-------------|----------|
+| `/health` | GET | Health check endpoint | `{"status": "ok", "model": "diabetes_readmission_model"}` |
+| `/model-info` | GET | Get model information | Model metadata, version, features, preprocessing status |
+| `/predict` | POST | Make prediction | `{"readmission_prediction": "NO", "probabilities": {...}}` |
+| `/metrics` | GET | Prometheus metrics | Prometheus-formatted metrics |
+| `/docs` | GET | API documentation | Swagger UI interactive docs |
+| `/openapi.json` | GET | OpenAPI specification | JSON schema |
+
+**Request Format**:
+```json
+{
+  "features": {
+    "race": "Caucasian",
+    "gender": "Female",
+    "age": "[70-80)",
+    // ... (50+ features)
+  }
+}
+```
+
+**Response Format**:
+```json
+{
+  "readmission_prediction": "NO",
+  "probabilities": {
+    "NO": 0.85,
+    "<30": 0.10,
+    ">30": 0.05
+  }
+}
+```
+
+**Prediction Classes**:
+- `NO`: No readmission
+- `<30`: Readmission within 30 days
+- `>30`: Readmission after 30 days
+
+### Step 9: Using the Web UI
+
+#### 9.1 Access the UI
+1. Open your browser and navigate to: `http://<minikube-ip>:30085`
+2. The UI will display:
+   - Model information (version, type, metrics)
+   - Interactive form for patient data entry
+   - Prediction results with probability distributions
+   - Model performance metrics
+
+#### 9.2 Making Predictions via UI
+1. Fill in the patient information form
+2. Click "Predict Readmission"
+3. View the prediction result and probability distribution
+4. Optionally, view model metadata and performance metrics
+
+### Step 10: Monitoring with Prometheus & Grafana
+
+#### 10.1 Access Prometheus
+1. Open Prometheus UI: `http://<minikube-ip>:30090`
+2. Navigate to "Targets" to verify API metrics are being scraped
+3. Use "Graph" to query metrics:
+   - `predict_requests_total` - Total prediction requests
+   - `predict_latency_seconds` - Request latency
+   - `predictions_total` - Predictions by class
+   - `predict_errors_total` - Error count by type
+   - `predict_requests_in_progress` - Current in-progress requests
+
+#### 10.2 Access Grafana
+1. Open Grafana UI: `http://<minikube-ip>:30300`
+2. Login with default credentials: `admin:admin`
+3. Add Prometheus data source:
+   - URL: `http://prometheus:9090` (internal) or `http://<minikube-ip>:30090` (external)
+   - Access: Server (default)
+4. Create dashboards for:
+   - API request rate and latency
+   - Prediction distribution
+   - Error rates
+   - Pod resource usage
+   - HPA scaling events
+
+#### 10.3 Key Metrics to Monitor
+- **Request Rate**: Requests per second
+- **Latency**: P50, P95, P99 response times
+- **Error Rate**: Percentage of failed requests
+- **Prediction Distribution**: Distribution of prediction classes
+- **Resource Usage**: CPU and memory usage per pod
+- **Scaling Events**: HPA scaling up/down events
+
+### Step 11: Load Testing with Locust
+
+#### 11.1 Access Locust UI
+1. Open Locust UI: `http://<minikube-ip>:30189`
+2. Configure test parameters:
+   - **Number of users**: 10-100 (concurrent users)
+   - **Spawn rate**: 2 (users per second)
+   - **Host**: `http://diabetes-api:8000` (internal) or `http://<minikube-ip>:30080` (external)
+3. Click "Start swarming" to begin load test
+
+#### 11.2 Monitor Load Test
+- View real-time statistics:
+  - Total requests per second
+  - Response times (min, max, average, median)
+  - Number of failures
+  - Response time distribution
+- Observe HPA scaling:
+  ```bash
+  # Watch HPA scale up/down
+  watch kubectl get hpa diabetes-api-hpa
+  
+  # Watch pod count
+  watch kubectl get pods -l app=diabetes-api
+  ```
+
+#### 11.3 Load Test Scenarios
+- **Light Load**: 10 users, 2 spawn rate
+- **Medium Load**: 50 users, 5 spawn rate
+- **Heavy Load**: 100 users, 10 spawn rate
+- **Stress Test**: 200+ users, 20 spawn rate
+
+#### 11.4 Analyze Results
+- Check Prometheus metrics during load test
+- Verify HPA scales appropriately
+- Monitor API pod resource usage
+- Check for errors in API logs
+
+### Step 12: Undeploy Services
+
+#### 12.1 Undeploy All Services
+```bash
+cd k8s/scripts
+./undeploy.sh --all
+```
+
+#### 12.2 Undeploy Individual Services
+```bash
+./undeploy.sh --api           # Undeploy API only
+./undeploy.sh --ui            # Undeploy UI only
+./undeploy.sh --monitoring    # Undeploy Monitoring only
+./undeploy.sh --locust        # Undeploy Locust only
 ```
 
 ---
@@ -1148,35 +1745,54 @@ We welcome contributions to improve this MLOps platform! Here's how you can cont
 
 We especially welcome contributions in these areas:
 
-1. **API Development**
-   - Build REST API for model inference
-   - Add endpoints for model management
-   - Implement authentication
+1. **API Enhancements**
+   - Add authentication and authorization (JWT, OAuth2)
+   - Implement rate limiting
+   - Add batch prediction endpoint
+   - Add model versioning and A/B testing support
+   - Implement request/response caching
 
 2. **Frontend Development**
-   - Create web UI for pipeline monitoring
-   - Build model comparison dashboard
-   - Add data visualization features
+   - Enhance UI with more visualizations
+   - Add model comparison dashboard
+   - Create pipeline monitoring dashboard
+   - Add data exploration features
+   - Implement user authentication
 
 3. **Testing & Quality**
    - Add unit tests for data processing
    - Create integration tests for pipelines
-   - Implement load testing with Locust
+   - Add API integration tests
+   - Implement end-to-end tests
+   - Add performance benchmarks
 
 4. **Observability**
-   - Add Prometheus metrics
-   - Integrate with Grafana
-   - Implement distributed tracing
+   - Add distributed tracing (Jaeger, Zipkin)
+   - Create more Grafana dashboards
+   - Implement alerting rules
+   - Add log aggregation (ELK stack)
+   - Implement SLA/SLO monitoring
 
 5. **Model Improvements**
-   - Add hyperparameter tuning (GridSearch, Optuna)
+   - Add hyperparameter tuning (GridSearch, Optuna, Hyperopt)
    - Implement cross-validation
    - Add more algorithms (XGBoost, LightGBM, Neural Networks)
+   - Implement model explainability (SHAP, LIME)
+   - Add model drift detection
 
-6. **Documentation**
+6. **Infrastructure**
+   - Add CI/CD pipelines (GitHub Actions, GitLab CI)
+   - Implement blue-green deployments
+   - Add canary deployments
+   - Implement service mesh (Istio, Linkerd)
+   - Add multi-cloud support
+
+7. **Documentation**
    - Add more detailed setup guides
    - Create troubleshooting section
    - Add architecture decision records (ADRs)
+   - Create video tutorials
+   - Add API documentation examples
 
 ### Code of Conduct
 
@@ -1203,11 +1819,18 @@ This project is licensed under the Apache License 2.0 - see the LICENSE file for
 ## Acknowledgments
 
 - **Apache Airflow** - Workflow orchestration platform
-- **MLflow** - ML lifecycle management
+- **MLflow** - ML lifecycle management and model registry
+- **FastAPI** - High-performance API framework
+- **Streamlit** - Interactive web application framework
 - **scikit-learn** - Machine learning algorithms
 - **MinIO** - S3-compatible object storage
 - **PostgreSQL** - Relational database
+- **Redis** - In-memory data store and message broker
+- **Prometheus** - Metrics collection and monitoring
+- **Grafana** - Metrics visualization and dashboards
+- **Locust** - Load testing framework
 - **Docker** & **Kubernetes** - Containerization and orchestration
+- **Minikube** - Local Kubernetes cluster
 
 ---
 

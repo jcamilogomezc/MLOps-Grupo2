@@ -106,12 +106,37 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Apply service
+# Apply service (NodePort for Minikube)
 $KUBECTL_CMD apply -f "$MANIFESTS_DIR/api-service.yaml"
 
 if [ $? -ne 0 ]; then
     echo -e "${RED}Error: Failed to apply service${NC}"
     exit 1
+fi
+
+# Optionally apply LoadBalancer service (for cloud deployments)
+if [ -f "$MANIFESTS_DIR/api-service-loadbalancer.yaml" ]; then
+    echo -e "${YELLOW}Note: LoadBalancer service found. Apply it manually if needed for cloud deployments:${NC}"
+    echo "  $KUBECTL_CMD apply -f $MANIFESTS_DIR/api-service-loadbalancer.yaml"
+fi
+
+# Apply HPA if metrics server is available
+if [ -f "$MANIFESTS_DIR/api-hpa.yaml" ]; then
+    echo -e "${YELLOW}Applying Horizontal Pod Autoscaler...${NC}"
+    # Check if metrics-server is available (required for HPA)
+    if $KUBECTL_CMD get deployment metrics-server -n kube-system &> /dev/null; then
+        $KUBECTL_CMD apply -f "$MANIFESTS_DIR/api-hpa.yaml"
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}✓ HPA applied successfully${NC}"
+        else
+            echo -e "${YELLOW}Warning: Failed to apply HPA. Metrics server might not be ready.${NC}"
+            echo "  Enable metrics server in Minikube: minikube addons enable metrics-server"
+        fi
+    else
+        echo -e "${YELLOW}Warning: Metrics server not found. HPA requires metrics-server.${NC}"
+        echo "  Enable metrics server: minikube addons enable metrics-server"
+        echo "  Then apply HPA manually: $KUBECTL_CMD apply -f $MANIFESTS_DIR/api-hpa.yaml"
+    fi
 fi
 
 echo -e "${GREEN}✓ Deployment and Service applied successfully${NC}"
@@ -149,6 +174,14 @@ echo "  Get service URL: minikube service diabetes-api --url"
 echo "  View logs: $KUBECTL_CMD logs -l app=diabetes-api -f"
 echo "  Check status: $KUBECTL_CMD get pods -l app=diabetes-api"
 echo "  Check service: $KUBECTL_CMD get service diabetes-api"
+echo "  Check HPA: $KUBECTL_CMD get hpa diabetes-api-hpa"
+echo "  Scale manually: $KUBECTL_CMD scale deployment diabetes-api --replicas=5"
+echo ""
+echo "Performance Optimizations:"
+echo "  - Multiple replicas: 3 (configurable in deployment)"
+echo "  - Multiple workers per pod: 2 (configurable via UVICORN_WORKERS env var)"
+echo "  - HPA: Auto-scales based on CPU/memory (if metrics-server is enabled)"
+echo "  - Async endpoints: Better concurrency handling"
 echo ""
 echo "API Endpoints:"
 echo "  Health: http://$MINIKUBE_IP:30080/health"
