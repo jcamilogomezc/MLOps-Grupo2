@@ -16,6 +16,7 @@ spec:
         app: prometheus
         component: monitoring
     spec:
+      serviceAccountName: prometheus
       containers:
       - name: prometheus
         image: prom/prometheus:latest
