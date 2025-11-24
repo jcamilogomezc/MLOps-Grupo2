@@ -14,4 +14,4 @@ COPY requirements/requirements.txt /requirements.txt
 RUN pip install --no-cache-dir -r /requirements.txt
 
 # Optionally copy DAGs / plugins
-COPY dags/ /opt/airflow/dags/
+COPY dags /opt/airflow/dags/
