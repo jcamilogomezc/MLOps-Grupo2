@@ -11,6 +11,7 @@ jobs:
     build:
         name: Build and Push the images
         runs-on: ubuntu-latest
+        environment: env
         strategy:
             matrix:
                 components: [airflow]
