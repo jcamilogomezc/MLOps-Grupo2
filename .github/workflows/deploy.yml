@@ -3,10 +3,6 @@ on:
     push:
         branches: [ main ]
 
-defaults:
-    run:
-        working-directory: ./Proyectos/Proyecto_final
-
 jobs:
     build:
         name: Build and Push the images
@@ -20,7 +16,7 @@ jobs:
             DOCKERHUB_USERNAME: "germanaoq"
         defaults:
             run:
-                working-directory: ./${{ matrix.components }}
+                working-directory: ./Proyectos/Proyecto_final/${{ matrix.components }}
         steps:
             - uses: actions/checkout@v6
             - name: Print files
