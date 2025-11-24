@@ -3,19 +3,24 @@ on:
     push:
         branches: [ main ]
 
+defaults:
+    run:
+        working-directory: ./Proyectos/Proyecto_final
+
 jobs:
     build:
         name: Build and Push the images
         runs-on: ubuntu-latest
         environment: env
-        defaults:
-            run:
-                working-directory: ./Proyectos/Proyecto_final
+
         strategy:
             matrix:
                 components: [ airflow ]
         env:
             DOCKERHUB_USERNAME: "germanaoq"
+        defaults:
+            run:
+                working-directory: ./${{ matrix.components }}
         steps:
             - uses: actions/checkout@v6
             - name: Print files
@@ -28,6 +33,5 @@ jobs:
             - name: Build and push
               uses: docker/build-push-action@v5
               with:
-                context: ./${{ matrix.components }}
                 push: true
                 tags: ${{ env.DOCKERHUB_USERNAME }}/mlops-${{ matrix.components }}:${{ github.sha }}
