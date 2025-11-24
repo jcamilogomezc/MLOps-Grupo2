@@ -26,7 +26,7 @@ jobs:
             - name: Build and push
               uses: docker/build-push-action@v4
               with:
-                context: .
-                file: ./Proyectos/Proyecto_final/${{ matrix.components }}/Dockerfile
+                context: ./Proyectos/Proyecto_final/${{ matrix.components }}
+                file: ./Dockerfile
                 push: true
                 tags: ${{ env.DOCKERHUB_USERNAME }}/mlops-${{ matrix.components }}:${{ github.sha }}
