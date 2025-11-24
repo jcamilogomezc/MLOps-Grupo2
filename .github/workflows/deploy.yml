@@ -28,7 +28,7 @@ jobs:
             - name: Build and push
               uses: docker/build-push-action@v5
               with:
-                context: "{{defaultContext}}:$matrix.components"
+                context: "{{defaultContext}}:${{ matrix.components }}"
                 push: true
                 tags: ${{ env.DOCKERHUB_USERNAME }}/${{ matrix.components }}:${{ github.sha }}
 
