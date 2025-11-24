@@ -1,0 +1,32 @@
+name: Deploy 🚀
+on:
+    push:
+        branches: [ main ]
+
+defaults:
+  run:
+    working-directory: ./Proyectos/Proyecto_final
+
+jobs:
+    build:
+        name: Build and Push the images
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                components: [airflow]
+        env:
+            DOCKERHUB_USERNAME: "germanaoq"
+        steps:
+            - uses: actions/checkout@v6
+            - name: Login to Docker Hub
+              uses: docker/login-action@v3
+              with:
+                username: ${{ env.DOCKERHUB_USERNAME }}
+                password: ${{ secrets.DOCKERHUB_TOKEN }}
+            - name: Build and push
+              uses: docker/build-push-action@v5
+              with:
+                context: ${{ matrix.components }}
+                push: true
+                tags: ${{ env.DOCKERHUB_USERNAME }}/${{ matrix.components }}:"$GITHUB_SHA"
+
