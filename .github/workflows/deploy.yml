@@ -29,5 +29,5 @@ jobs:
               with:
                 context: ${{ matrix.components }}
                 push: true
-                tags: ${{ env.DOCKERHUB_USERNAME }}/${{ matrix.components }}:"$GITHUB_SHA"
+                tags: ${{ env.DOCKERHUB_USERNAME }}/${{ matrix.components }}:${{ github.sha }}
 
