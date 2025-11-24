@@ -14,9 +14,6 @@ jobs:
                 components: [ airflow ]
         env:
             DOCKERHUB_USERNAME: "germanaoq"
-        defaults:
-            run:
-                working-directory: ./Proyectos/Proyecto_final/${{ matrix.components }}
         steps:
             - uses: actions/checkout@v6
             - name: Print files
@@ -29,5 +26,7 @@ jobs:
             - name: Build and push
               uses: docker/build-push-action@v4
               with:
+                context: .
+                file: ./Proyectos/Proyecto_final/${{ matrix.components }}
                 push: true
                 tags: ${{ env.DOCKERHUB_USERNAME }}/mlops-${{ matrix.components }}:${{ github.sha }}
