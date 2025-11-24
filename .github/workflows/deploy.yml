@@ -13,7 +13,7 @@ jobs:
                 working-directory: ./Proyectos/Proyecto_final
         strategy:
             matrix:
-                components: [airflow]
+                components: [ airflow ]
         env:
             DOCKERHUB_USERNAME: "germanaoq"
         steps:
@@ -28,7 +28,8 @@ jobs:
             - name: Build and push
               uses: docker/build-push-action@v5
               with:
-                context: "{{defaultContext}}:${{ matrix.components }}"
+                context: "./${{ matrix.components }}/"
+                file: "./${{ matrix.components }}/Dockerfile"
                 push: true
                 tags: ${{ env.DOCKERHUB_USERNAME }}/${{ matrix.components }}:${{ github.sha }}
 
