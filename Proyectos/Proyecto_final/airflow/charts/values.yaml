@@ -1,0 +1,53 @@
+
+airflow:
+  image:
+    repository: germanaoq/airflow-custom
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+  executor: CeleryExecutor
+
+  config:
+    celery:
+      broker_url: redis://redis-master.airflow.svc.cluster.local:6379/0
+
+postgresql:
+  enabled: true
+
+  image:
+    registry: docker.io
+    repository: bitnami/postgresql
+    tag: latest
+
+  auth:
+    username: airflow
+    password: airflowpass
+    database: airflow
+
+webserver:
+  replicas: 1
+  service:
+    type: LoadBalancer
+
+scheduler:
+  replicas: 1
+
+workers:
+  replicas: 2
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+
+logs:
+  persistence:
+    enabled: true
+    size: 5Gi
+
+dags:
+  persistence:
+    enabled: true
+    size: 5Gi
+
+gitSync:
+  enabled: false
