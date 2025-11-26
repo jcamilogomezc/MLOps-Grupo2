@@ -50,12 +50,6 @@ kubectl port-forward service/airflow-api-server 8080:8080 --namespace airflow
 kubectl get all --all-namespaces
 ```
 
-## Cleanup
-
-```bash
-minikube delete --all --purge
-```
-
 ---
 
 ## Argo Workflows
@@ -84,6 +78,40 @@ AIRFLOW_USER="germanaoq"
 
 docker build -t "${AIRFLOW_USER}/airflow-custom:latest" .
 docker push "${AIRFLOW_USER}/airflow-custom:latest"
+```
+
+---
+
+## MLflow
+
+### Install
+
+```bash
+helm install mlflow community-charts/mlflow --namespace airflow --debug --timeout 10m01s
+```
+
+---
+
+## PostgreSQL Raw
+
+```bash
+helm install psql-raw bitnami/postgresql -f postgresql/values-raw.yml
+```
+
+---
+
+## PostgreSQL Clean
+
+```bash
+helm install psql-clean bitnami/postgresql -f postgresql/values-clean.yml
+```
+
+---
+
+## Cleanup
+
+```bash
+minikube delete --all --purge
 ```
 
 ## References

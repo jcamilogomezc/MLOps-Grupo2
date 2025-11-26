@@ -1,7 +1,7 @@
 
 airflow:
   image:
-    repository: germanaoq/airflow-custom
+    repository: germanaoq/mlops-airflow
     tag: "latest"
     pullPolicy: IfNotPresent
 
@@ -27,7 +27,7 @@ postgresql:
 webserver:
   replicas: 1
   service:
-    type: LoadBalancer
+    type: NodePort
 
 scheduler:
   replicas: 1

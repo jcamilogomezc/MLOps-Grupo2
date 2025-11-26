@@ -1,0 +1,6 @@
+postgresqlPassword: "secret-password"
+postgresqlDatabase: "database-raw"
+postgresqlUsername: "user-raw"
+persistence:
+  enabled: true
+  size: 8Gi
