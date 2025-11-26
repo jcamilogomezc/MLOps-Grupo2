@@ -1,0 +1,6 @@
+postgresqlPassword: "secret-password"
+postgresqlDatabase: "database-clean"
+postgresqlUsername: "user-clean"
+persistence:
+  enabled: true
+  size: 8Gi
