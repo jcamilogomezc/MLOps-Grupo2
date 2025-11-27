@@ -27,4 +27,4 @@ jobs:
                 context: ./Proyectos/Proyecto_final/${{ matrix.components }}
                 file: ./Proyectos/Proyecto_final/${{ matrix.components }}/Dockerfile
                 push: true
-                tags: ${{ env.DOCKERHUB_USERNAME }}/mlops-${{ matrix.components }}:${{ github.sha }}
+                tags: ${{ env.DOCKERHUB_USERNAME }}/mlops-${{ matrix.components }}:${{ github.sha }},${{ env.DOCKERHUB_USERNAME }}/mlops-${{ matrix.components }}:latest
