@@ -1,0 +1,17 @@
+apiVersion: v2
+name: api
+description: FastAPI-based REST API service for MLOps infrastructure
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+maintainers:
+  - name: MLOps Team
+
+keywords:
+  - fastapi
+  - api
+  - rest
+  - mlops
+  - python
+  - uvicorn

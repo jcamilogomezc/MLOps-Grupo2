@@ -1,0 +1,130 @@
+# Override values for community-charts/mlflow Helm chart
+# Usage: helm install mlflow community-charts/mlflow -f values.yaml
+
+# MLflow image configuration
+image:
+  repository: burakince/mlflow
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+# Replica count
+replicaCount: 1
+
+# Service configuration
+service:
+  enabled: true
+  type: NodePort
+  port: 5000
+  containerPort: 5000
+  annotations: {}
+  # Note: NodePort will be automatically assigned by Kubernetes
+  # To set a specific NodePort (30500), you need to modify the service after deployment
+  # or use kubectl patch/edit commands
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 500m
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+# Backend store configuration (PostgreSQL)
+# Note: postgresql.enabled and backendStore.postgres.enabled are mutually exclusive
+# When using the postgresql subchart, set backendStore.postgres.enabled: false
+backendStore:
+  databaseMigration: true
+  databaseConnectionCheck: true
+  postgres:
+    enabled: false  # Must be false when postgresql.enabled is true
+
+# PostgreSQL subchart configuration
+# This deploys PostgreSQL using Bitnami subchart
+postgresql:
+  enabled: true
+  auth:
+    username: mlflow
+    password: mlflowpass
+    database: mlflow
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+# Artifact root configuration (S3/MinIO)
+artifactRoot:
+  proxiedArtifactStorage: true
+  s3:
+    enabled: true
+    bucket: "mlflow"
+    path: ""
+    awsAccessKeyId: "minioadmin"
+    awsSecretAccessKey: "minioadmin"
+
+# Extra environment variables for MinIO S3 compatibility
+# Must be an object (key-value pairs), not an array
+extraEnvVars:
+  MLFLOW_S3_ENDPOINT_URL: "http://mlflow-minio:9000"
+  MLFLOW_S3_IGNORE_TLS: "true"
+  AWS_ACCESS_KEY_ID: "minioadmin"
+  AWS_SECRET_ACCESS_KEY: "minioadmin"
+  AWS_DEFAULT_REGION: "us-east-1"
+
+# Extra flags for MLflow server
+# Must be an array of objects with flag names in camelCase
+extraFlags:
+  - serveArtifacts
+
+# Health probes
+livenessProbe:
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  initialDelaySeconds: 15
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Security context
+podSecurityContext:
+  fsGroup: 1001
+
+securityContext:
+  runAsUser: 1001
+  runAsNonRoot: true
+
+# Service account
+serviceAccount:
+  create: true
+  annotations: {}
+
+# Ingress configuration (disabled by default)
+ingress:
+  enabled: false
+
+# Note: MinIO must be deployed separately
+# You can use the Bitnami MinIO chart or deploy MinIO independently
+# Example MinIO deployment:
+# helm install mlflow-minio bitnami/minio \
+#   --set auth.rootUser=minioadmin \
+#   --set auth.rootPassword=minioadmin \
+#   --set defaultBuckets=mlflow \
+#   --set service.type=NodePort \
+#   --set service.nodePorts.api=30900 \
+#   --set service.nodePorts.console=30901 \
+#   --set persistence.size=20Gi \
+#   --set resources.limits.cpu=500m \
+#   --set resources.limits.memory=1Gi \
+#   --set resources.requests.cpu=250m \
+#   --set resources.requests.memory=512Mi
