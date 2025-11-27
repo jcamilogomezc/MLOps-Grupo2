@@ -1,47 +1,54 @@
-# Step-by-Step Guide to Start Server with Helm and Minikube
+# Step-by-Step Guide to Deploy MLOps Infrastructure with Helm and Minikube
 
-## Start Server
-
-```bash
-minikube start --cpus=4 --memory=4096 --addons=metallb --extra-config=apiserver.service-node-port-range=1-65535
-```
-
-## Create Namespace
+## Start Minikube Server
 
 ```bash
-kubectl create namespace airflow
+minikube start --cpus=5 --memory=7851 --addons=metallb --extra-config=apiserver.service-node-port-range=1-65535
 ```
 
-## Adding the Apache Airflow Helm Chart Repository
+## Create MLOps Namespace
+
+```bash
+kubectl create namespace mlops
+```
+
+## Apache Airflow
+
+### Add the Apache Airflow Helm Chart Repository
 
 ```bash
 helm repo add apache-airflow https://airflow.apache.org
 ```
 
-## Installing Apache Airflow Using Helm
+### Install Apache Airflow Using Helm
 
 ```bash
-helm install airflow apache-airflow/airflow --namespace airflow --debug --timeout 10m01s -f airflow/charts/values.yaml
+helm install airflow apache-airflow/airflow --namespace mlops --debug --timeout 10m01s -f airflow/charts/values.yaml
 ```
 
-## Configuration to Expose Airflow API Server (Optional)
+### Configuration to Expose Airflow API Server (Optional)
 
-### Update Type of Airflow Server to Use LoadBalancer
+#### Update Airflow Server Type to Use LoadBalancer
 
 ```bash
 kubectl apply -f ./airflow/api-server-lb.yaml
 ```
 
-### Configure MetalLB
+#### Configure MetalLB
 
 ```bash
 kubectl apply -f ./airflow/metallb-config.yaml
 ```
 
-### Expose with Port Forward
+#### Expose with Port Forward
 
 ```bash
-kubectl port-forward service/airflow-api-server 8080:8080 --namespace airflow
+kubectl port-forward service/airflow-api-server 8080:8080 --namespace mlops
+```
+
+### Expose with tunnel minikube
+```bash
+minikube service airflow-api-server -n mlops
 ```
 
 ## Get Cluster Info
@@ -52,9 +59,57 @@ kubectl get all --all-namespaces
 
 ---
 
+## MLflow
+
+### Add Bitnami Repository and Install MLflow
+
+```bash
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+
+helm install mlflow community-charts/mlflow -f ./mlflow/values.yaml --namespace mlops --debug --timeout 10m01s
+```
+
+### Expose with tunnel minikube
+```bash
+minikube service mlflow -n mlops
+```
+
+---
+
+
+## PostgreSQL Raw
+
+### Install PostgreSQL for Raw Data
+
+```bash
+helm install psql-raw bitnami/postgresql --namespace mlops -f postgresql/values-raw.yml
+```
+
+---
+
+## PostgreSQL Clean
+
+### Install PostgreSQL for Clean Data
+
+```bash
+helm install psql-clean bitnami/postgresql --namespace mlops -f postgresql/values-clean.yml
+```
+
+---
+
+## Inference API
+
+### Install
+```bash
+helm install inference-api ./api --namespace mlops --debug --timeout 10m01s
+```
+
+---
+
 ## Argo Workflows
 
-### Install Argo
+### Install Argo Workflows
 
 Specify the version:
 
@@ -67,43 +122,6 @@ Apply the quick-start manifest:
 ```bash
 kubectl create namespace argo
 kubectl apply -n argo -f "https://github.com/argoproj/argo-workflows/releases/download/${ARGO_WORKFLOWS_VERSION}/quick-start-minimal.yaml"
-```
-
----
-
-## Build and Deploy to DockerHub
-
-```bash
-AIRFLOW_USER="germanaoq"
-
-docker build -t "${AIRFLOW_USER}/airflow-custom:latest" .
-docker push "${AIRFLOW_USER}/airflow-custom:latest"
-```
-
----
-
-## MLflow
-
-### Install
-
-```bash
-helm install mlflow community-charts/mlflow --namespace airflow --debug --timeout 10m01s
-```
-
----
-
-## PostgreSQL Raw
-
-```bash
-helm install psql-raw bitnami/postgresql -f postgresql/values-raw.yml
-```
-
----
-
-## PostgreSQL Clean
-
-```bash
-helm install psql-clean bitnami/postgresql -f postgresql/values-clean.yml
 ```
 
 ---

@@ -28,6 +28,10 @@ webserver:
   replicas: 1
   service:
     type: NodePort
+    ports:
+      - name: airflow-ui
+        port: 8080
+        nodePort: 30080  # Access Airflow UI at http://<node-ip>:30080
 
 scheduler:
   replicas: 1

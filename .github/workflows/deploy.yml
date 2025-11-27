@@ -11,7 +11,7 @@ jobs:
 
         strategy:
             matrix:
-                components: [ airflow, mlflow ]
+                components: [ airflow, api ]
         env:
             DOCKERHUB_USERNAME: "germanaoq"
         steps:
